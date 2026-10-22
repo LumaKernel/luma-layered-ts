@@ -1,0 +1,49 @@
+{
+  "name": "@luma-layered-ts/types",
+  "version": "0.0.0-dev",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Type utilities for luma-layered-ts architecture",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "homepage": "https://github.com/LumaKernel/luma-layered-ts/tree/main/packages/types",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest",
+    "lint": "eslint src && prettier . --list-different",
+    "lint-fix": "eslint src && prettier . --write",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "typescript",
+    "layered-architecture",
+    "effect-ts",
+    "readonly",
+    "json"
+  ],
+  "author": "Luma <world@luma.email>",
+  "license": "MIT",
+  "dependencies": {
+    "effect": "^3.0.0"
+  },
+  "peerDependencies": {
+    "effect": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^10.0.0",
+    "prettier": "^3.5.3",
+    "semantic-release": "^24.2.5",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^3.2.4"
+  }
+}
