@@ -10,6 +10,11 @@
   "files": [
     "lib"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LumaKernel/luma-layered-ts",
+    "directory": "packages/types"
+  },
   "homepage": "https://github.com/LumaKernel/luma-layered-ts/tree/main/packages/types",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
