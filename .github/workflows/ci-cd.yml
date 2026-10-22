@@ -31,17 +31,10 @@ jobs:
         with:
           fail_ci_if_error: false
           use_oidc: true
-      - name: Verify NPM_TOKEN is set
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if [ -z "$NPM_TOKEN" ]; then
-            echo "::error::NPM_TOKEN secret is not set. Required for semantic-release."
-            exit 1
-          fi
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # semantic-release v25 uses npm trusted publishing (OIDC) by default.
+      # No NPM_TOKEN needed. Configure trusted publisher on npmjs.com first.
+      # Initial publish requires the package to already exist on npm.
       - run: npx -q --no-install semantic-release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
