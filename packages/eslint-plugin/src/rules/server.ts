@@ -14,7 +14,12 @@ import type { LayerName } from "../layers.js";
 type Options = Record<string, never>;
 const defaultOptions: Options = {};
 
-const SERVER_LAYERS = new Set<LayerName>(["core", "service", "adapter", "infra"]);
+const SERVER_LAYERS = new Set<LayerName>([
+  "core",
+  "service",
+  "adapter",
+  "infra",
+]);
 const INNER_LAYERS = new Set<LayerName>(["core", "service"]);
 
 type MessageId =
@@ -33,8 +38,7 @@ export default createRule<[Options], MessageId>({
         "Enforce layered architecture for server-side layers (core, service, adapter, infra). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
     },
     messages: {
-      importViolation:
-        "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
+      importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
       encodedGlobal:
         "'{{name}}' is an encoded representation API. Not allowed in '{{layer}}'. Use canonical types (Effect.ts) instead.",
       ioGlobal:
@@ -79,7 +83,9 @@ export default createRule<[Options], MessageId>({
           checkImport(node.source.value, node);
         }
       },
-      TSExternalModuleReference(node: TSESTree.TSExternalModuleReference): void {
+      TSExternalModuleReference(
+        node: TSESTree.TSExternalModuleReference,
+      ): void {
         if (
           node.expression.type === AST_NODE_TYPES.Literal &&
           typeof node.expression.value === "string"
@@ -95,7 +101,7 @@ export default createRule<[Options], MessageId>({
             Identifier(node: TSESTree.Identifier): void {
               // Skip property access right-hand side (obj.JSON is fine)
               if (
-                node.parent?.type === "MemberExpression" &&
+                node.parent?.type === AST_NODE_TYPES.MemberExpression &&
                 node.parent.property === node &&
                 !node.parent.computed
               ) {
@@ -159,8 +165,8 @@ export default createRule<[Options], MessageId>({
       while (current) {
         if (
           current.type.startsWith("TS") &&
-          current.type !== "TSAsExpression" &&
-          current.type !== "TSSatisfiesExpression"
+          current.type !== AST_NODE_TYPES.TSAsExpression &&
+          current.type !== AST_NODE_TYPES.TSSatisfiesExpression
         ) {
           return true;
         }

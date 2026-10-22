@@ -38,10 +38,7 @@ export function getLayerFromImport(importPath: string): LayerName | null {
     ) {
       return layer;
     }
-    if (
-      importPath.startsWith(`@/${layer}/`) ||
-      importPath === `@/${layer}`
-    ) {
+    if (importPath.startsWith(`@/${layer}/`) || importPath === `@/${layer}`) {
       return layer;
     }
   }
