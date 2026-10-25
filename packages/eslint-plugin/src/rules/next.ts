@@ -17,10 +17,7 @@ const defaultOptions: Options = {};
 const NEXT_LAYERS = new Set<LayerName>(["app/api", "app/pages"]);
 
 type MessageId =
-  | "importViolation"
-  | "encodedGlobal"
-  | "schemaBoundary"
-  | "encodedMethod";
+  "importViolation" | "encodedGlobal" | "schemaBoundary" | "encodedMethod";
 
 export default createRule<[Options], MessageId>({
   name: "next",

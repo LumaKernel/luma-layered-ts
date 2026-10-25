@@ -23,13 +23,7 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "ui/pages": ["core", "service", "ui/hooks", "ui/components"],
   // app/ layers are wiring roots (entry points) — not importable by other layers
   "app/api": ["core", "service", "adapter", "infra"],
-  "app/pages": [
-    "core",
-    "service",
-    "ui/hooks",
-    "ui/components",
-    "ui/pages",
-  ],
+  "app/pages": ["core", "service", "ui/hooks", "ui/components", "ui/pages"],
 };
 
 // Test files are excluded from layer constraint checks.
