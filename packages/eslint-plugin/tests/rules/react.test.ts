@@ -43,6 +43,12 @@ ruleTester.run("react", rule, {
       filename: "/project/src/ui/components/foo.tsx",
     },
 
+    // --- Test / story files excluded ---
+    {
+      code: `import { Foo } from "@/engines/bar";`,
+      filename: "/project/src/ui/components/card.stories.tsx",
+    },
+
     // --- Non-UI files: not checked by this rule ---
     { code: `JSON.parse(data);`, filename: "/project/src/core/foo.ts" },
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },
@@ -110,6 +116,28 @@ ruleTester.run("react", rule, {
       ],
     },
 
+    // --- Imports to non-layer alias paths ---
+    {
+      code: `import { Board } from "@/engines/chess/board";`,
+      filename: "/project/src/ui/components/chess.tsx",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/engines/chess/board" },
+        },
+      ],
+    },
+    {
+      code: `import { GAME_TYPES } from "@/lib/constants";`,
+      filename: "/project/src/ui/components/sidebar.tsx",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/constants" },
+        },
+      ],
+    },
+
     // --- Encoding globals ---
     {
       code: `JSON.parse(data);`,
@@ -171,6 +199,46 @@ ruleTester.run("react", rule, {
         },
       ],
     },
+    {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/ui/components/board.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "ui/components" },
+        },
+      ],
+    },
+    {
+      code: `Number("42");`,
+      filename: "/project/src/ui/hooks/use-data.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "ui/hooks" },
+        },
+      ],
+    },
+    {
+      code: `new Date();`,
+      filename: "/project/src/ui/components/card.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "ui/components" },
+        },
+      ],
+    },
+    {
+      code: `Date.now();`,
+      filename: "/project/src/ui/pages/home.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "ui/pages" },
+        },
+      ],
+    },
 
     // --- Schema boundary ---
     {
@@ -216,16 +284,6 @@ ruleTester.run("react", rule, {
       ],
     },
     {
-      code: `str.includes("foo");`,
-      filename: "/project/src/ui/hooks/use-data.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "ui/hooks" },
-        },
-      ],
-    },
-    {
       code: `str.trim();`,
       filename: "/project/src/ui/hooks/use-data.ts",
       errors: [
@@ -262,13 +320,6 @@ ruleTester.run("react", rule, {
       ],
     },
     {
-      code: `str.includes("test");`,
-      filename: "/project/src/ui/components/card.tsx",
-      errors: [
-        { messageId: "componentParseMethod", data: { method: "includes" } },
-      ],
-    },
-    {
       code: `str.replace("a", "b");`,
       filename: "/project/src/ui/components/card.tsx",
       errors: [
@@ -282,14 +333,6 @@ ruleTester.run("react", rule, {
         { messageId: "componentParseMethod", data: { method: "startsWith" } },
       ],
     },
-    {
-      code: `str.slice(0, 5);`,
-      filename: "/project/src/ui/components/card.tsx",
-      errors: [
-        { messageId: "componentParseMethod", data: { method: "slice" } },
-      ],
-    },
-
     // --- String interpretation in pages (all forbidden) ---
     {
       code: `str.split(",");`,
@@ -298,16 +341,6 @@ ruleTester.run("react", rule, {
         {
           messageId: "encodedMethod",
           data: { method: "split", layer: "ui/pages" },
-        },
-      ],
-    },
-    {
-      code: `str.includes("foo");`,
-      filename: "/project/src/ui/pages/home.tsx",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "ui/pages" },
         },
       ],
     },

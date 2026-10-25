@@ -43,6 +43,15 @@ ruleTester.run("server", rule, {
       code: `import { Effect } from "effect";`,
       filename: "/project/src/core/foo.ts",
     },
+    // @/ alias imports to recognized layers are fine
+    {
+      code: `import { Foo } from "@/core/bar";`,
+      filename: "/project/src/service/foo.ts",
+    },
+    {
+      code: `import { Foo } from "@/service/bar";`,
+      filename: "/project/src/adapter/foo.ts",
+    },
     // non-layer files not checked
     {
       code: `import { Foo } from "./core/foo";`,
@@ -52,8 +61,17 @@ ruleTester.run("server", rule, {
     // --- adapter/infra: everything allowed ---
     { code: `JSON.parse(data);`, filename: "/project/src/adapter/api.ts" },
     { code: `fetch(url);`, filename: "/project/src/infra/http.ts" },
+    { code: `process.env.API_KEY;`, filename: "/project/src/infra/config.ts" },
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },
     { code: `parseInt("42");`, filename: "/project/src/adapter/parse.ts" },
+    { code: `Number("42");`, filename: "/project/src/adapter/parse.ts" },
+    {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/adapter/format.ts",
+    },
+    { code: `String(42);`, filename: "/project/src/infra/log.ts" },
+    { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
+    { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
       code: `Schema.decodeUnknown(S)(d);`,
       filename: "/project/src/adapter/api.ts",
@@ -70,6 +88,28 @@ ruleTester.run("server", rule, {
     { code: `effect.pipe(fn);`, filename: "/project/src/service/bar.ts" },
     // property access on non-global
     { code: `obj.JSON;`, filename: "/project/src/core/foo.ts" },
+    // array methods allowed (also exist on String but no type info to distinguish)
+    { code: `arr.includes(item);`, filename: "/project/src/core/foo.ts" },
+    { code: `arr.indexOf(item);`, filename: "/project/src/service/foo.ts" },
+    { code: `arr.slice(0, 5);`, filename: "/project/src/core/foo.ts" },
+
+    // --- Test files: excluded from layer checks ---
+    {
+      code: `JSON.parse(data);`,
+      filename: "/project/src/core/foo.test.ts",
+    },
+    {
+      code: `fetch(url);`,
+      filename: "/project/src/service/bar.spec.ts",
+    },
+    {
+      code: `str.split(",");`,
+      filename: "/project/src/core/schema.test.ts",
+    },
+    {
+      code: `import { Foo } from "@/engines/bar";`,
+      filename: "/project/src/core/foo.stories.tsx",
+    },
 
     // --- UI layers: not checked by this rule ---
     {
@@ -126,6 +166,38 @@ ruleTester.run("server", rule, {
         {
           messageId: "importViolation",
           data: { fromLayer: "service", toLayer: "ui/components" },
+        },
+      ],
+    },
+
+    // --- Imports to non-layer alias paths ---
+    {
+      code: `import { Foo } from "@/engines/chess/board";`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/engines/chess/board" },
+        },
+      ],
+    },
+    {
+      code: `import { BAR } from "@/lib/constants";`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/constants" },
+        },
+      ],
+    },
+    {
+      code: `import { Baz } from "@/utils/helper";`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/utils/helper" },
         },
       ],
     },
@@ -205,6 +277,66 @@ ruleTester.run("server", rule, {
         },
       ],
     },
+    {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `String(42);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "service" },
+        },
+      ],
+    },
+    {
+      code: `Number("42");`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Number.isFinite(x);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "service" },
+        },
+      ],
+    },
+    {
+      code: `new Date();`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Date.now();`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "service" },
+        },
+      ],
+    },
 
     // --- IO globals in inner layers ---
     {
@@ -226,6 +358,20 @@ ruleTester.run("server", rule, {
       filename: "/project/src/core/foo.ts",
       errors: [
         { messageId: "ioGlobal", data: { name: "Request", layer: "core" } },
+      ],
+    },
+    {
+      code: `process.env.FOO;`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        { messageId: "ioGlobal", data: { name: "process", layer: "core" } },
+      ],
+    },
+    {
+      code: `process.env.API_KEY;`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        { messageId: "ioGlobal", data: { name: "process", layer: "service" } },
       ],
     },
     {
@@ -280,16 +426,6 @@ ruleTester.run("server", rule, {
       ],
     },
     {
-      code: `str.includes("foo");`,
-      filename: "/project/src/service/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "service" },
-        },
-      ],
-    },
-    {
       code: `str.match(/pattern/);`,
       filename: "/project/src/core/foo.ts",
       errors: [
@@ -323,26 +459,6 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedMethod",
           data: { method: "startsWith", layer: "service" },
-        },
-      ],
-    },
-    {
-      code: `str.indexOf(":");`,
-      filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "indexOf", layer: "core" },
-        },
-      ],
-    },
-    {
-      code: `str.slice(0, 10);`,
-      filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "slice", layer: "core" },
         },
       ],
     },
