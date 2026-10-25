@@ -22,13 +22,7 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "ui/hooks": ["core", "service"],
   "ui/components": ["core", "ui/hooks"],
   "ui/containers": ["core", "service", "ui/hooks", "ui/components"],
-  "ui/pages": [
-    "core",
-    "service",
-    "ui/hooks",
-    "ui/components",
-    "ui/containers",
-  ],
+  "ui/pages": ["core", "service", "ui/hooks", "ui/components", "ui/containers"],
   // app/ layers are wiring roots (entry points) — not importable by other layers
   "app/api": ["core", "service", "adapter", "infra"],
   "app/pages": [
