@@ -79,8 +79,8 @@ export function isNonLayerAliasImport(importPath: string): boolean {
 // --- Encoded representation restrictions ---
 
 // Globals that interact with encoded representations (serialization, parsing).
-// globalThis is included to prevent bypassing encoding global restrictions
-// via indirect access patterns like globalThis["JSON"].
+// globalThis/Function are included to prevent bypassing restrictions via
+// indirect access (globalThis["JSON"], Function("return this")()).
 export const ENCODING_GLOBALS = new Set([
   "JSON",
   "String",
@@ -88,6 +88,7 @@ export const ENCODING_GLOBALS = new Set([
   "Date",
   "Temporal",
   "globalThis",
+  "Function",
   "parseInt",
   "parseFloat",
   "encodeURIComponent",
@@ -106,6 +107,7 @@ export const IO_GLOBALS = new Set([
   "Headers",
   "FormData",
   "process",
+  "performance",
 ]);
 
 // Schema boundary methods (decode/encode = canonical ↔ encoded conversion)

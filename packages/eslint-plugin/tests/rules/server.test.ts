@@ -77,6 +77,18 @@ ruleTester.run("server", rule, {
       filename: "/project/src/adapter/parse.ts",
     },
     {
+      code: `Function("return this")();`,
+      filename: "/project/src/adapter/parse.ts",
+    },
+    {
+      code: `performance.now();`,
+      filename: "/project/src/adapter/time.ts",
+    },
+    {
+      code: `performance.timeOrigin;`,
+      filename: "/project/src/infra/clock.ts",
+    },
+    {
       code: `Temporal.Now.instant();`,
       filename: "/project/src/adapter/time.ts",
     },
@@ -368,6 +380,50 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "globalThis", layer: "service" },
+        },
+      ],
+    },
+
+    // --- Function constructor bypass in inner layers ---
+    {
+      code: `Function("return this")();`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Function", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `new Function("return JSON")();`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Function", layer: "service" },
+        },
+      ],
+    },
+
+    // --- performance IO global in inner layers ---
+    {
+      code: `performance.now();`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "ioGlobal",
+          data: { name: "performance", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `performance.timeOrigin;`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "ioGlobal",
+          data: { name: "performance", layer: "service" },
         },
       ],
     },
