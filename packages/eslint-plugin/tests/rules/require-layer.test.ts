@@ -53,6 +53,11 @@ ruleTester.run("require-layer", rule, {
       code: `const x = 1;`,
       filename: "/project/src/lib/kv.spec.ts",
     },
+    // Story files: excluded (fixture data)
+    {
+      code: `const x = 1;`,
+      filename: "/project/src/engines/chess/board.stories.tsx",
+    },
     // Files outside src/ entirely
     { code: `const x = 1;`, filename: "/project/scripts/build.ts" },
     { code: `const x = 1;`, filename: "/project/tests/e2e.test.ts" },

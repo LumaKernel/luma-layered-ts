@@ -43,6 +43,12 @@ ruleTester.run("react", rule, {
       filename: "/project/src/ui/components/foo.tsx",
     },
 
+    // --- Test / story files excluded ---
+    {
+      code: `import { Foo } from "@/engines/bar";`,
+      filename: "/project/src/ui/components/card.stories.tsx",
+    },
+
     // --- Non-UI files: not checked by this rule ---
     { code: `JSON.parse(data);`, filename: "/project/src/core/foo.ts" },
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },

@@ -102,6 +102,10 @@ ruleTester.run("server", rule, {
       code: `str.split(",");`,
       filename: "/project/src/core/schema.test.ts",
     },
+    {
+      code: `import { Foo } from "@/engines/bar";`,
+      filename: "/project/src/core/foo.stories.tsx",
+    },
 
     // --- UI layers: not checked by this rule ---
     {

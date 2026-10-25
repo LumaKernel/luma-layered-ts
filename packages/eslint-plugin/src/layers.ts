@@ -26,10 +26,10 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "app/pages": ["core", "service", "ui/hooks", "ui/components", "ui/pages"],
 };
 
-// Test files are excluded from layer constraint checks.
+// Test and story files are excluded from layer constraint checks.
 // They need freedom to import across layers for fixtures and mocking.
 export function isTestFile(filePath: string): boolean {
-  return /\.(test|spec)\.[^/]+$/.test(filePath);
+  return /\.(test|spec|stories)\.[^/]+$/.test(filePath);
 }
 
 export function getLayerFromPath(filePath: string): LayerName | null {

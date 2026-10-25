@@ -10,7 +10,7 @@
 
 例外:
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
-- テストファイル(`.test.ts`, `.spec.ts`)は全ルールから除外。テストはフィクスチャ作成のためにレイヤ横断importが必要
+- テストファイル(`.test.ts`, `.spec.ts`)とStorybook(`.stories.tsx`)は全ルールから除外。フィクスチャ作成のためにレイヤ横断importが必要
 
 ## `server`
 
