@@ -7,10 +7,10 @@ inner layerの型はcanonical representation。JSON表現はencoded boundary rep
 | Canonical (inner layers) | Encoded (boundary) | 備考 |
 |---|---|---|
 | `Option<T>` | `T \| null` / `T \| undefined` | inner layerでnull/undefinedを直接扱わない |
-| `DateTime.Utc` | ISO 8601 string | `Date`も禁止(`no-date`ルール) |
+| `DateTime.Utc` | ISO 8601 string | `Date`はencoding globals禁止で検出 |
 | `BigDecimal` | `string` (numeric) | 精度を落とさない |
 | `Brand<"UserId">` | `string` | |
-| `ReadonlyArray<T>` | `T[]` | `prefer-immutable` |
+| `ReadonlyArray<T>` | `T[]` | inner layerではimmutable必須 |
 | `Redacted<string>` | `string` | |
 | tagged union (`_tag`) | JSON discriminator | exhaustive switch |
 | `HashMap` / `StrictReadonlyMap` | `Record<K, V>` | TSの`ReadonlyMap`は不完全。`@luma-layered-ts/types`を使う |

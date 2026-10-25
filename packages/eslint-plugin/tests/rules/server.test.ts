@@ -52,8 +52,12 @@ ruleTester.run("server", rule, {
     // --- adapter/infra: everything allowed ---
     { code: `JSON.parse(data);`, filename: "/project/src/adapter/api.ts" },
     { code: `fetch(url);`, filename: "/project/src/infra/http.ts" },
+    { code: `process.env.API_KEY;`, filename: "/project/src/infra/config.ts" },
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },
     { code: `parseInt("42");`, filename: "/project/src/adapter/parse.ts" },
+    { code: `Number("42");`, filename: "/project/src/adapter/parse.ts" },
+    { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
+    { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
       code: `Schema.decodeUnknown(S)(d);`,
       filename: "/project/src/adapter/api.ts",
@@ -70,6 +74,20 @@ ruleTester.run("server", rule, {
     { code: `effect.pipe(fn);`, filename: "/project/src/service/bar.ts" },
     // property access on non-global
     { code: `obj.JSON;`, filename: "/project/src/core/foo.ts" },
+
+    // --- Test files: excluded from layer checks ---
+    {
+      code: `JSON.parse(data);`,
+      filename: "/project/src/core/foo.test.ts",
+    },
+    {
+      code: `fetch(url);`,
+      filename: "/project/src/service/bar.spec.ts",
+    },
+    {
+      code: `str.split(",");`,
+      filename: "/project/src/core/schema.test.ts",
+    },
 
     // --- UI layers: not checked by this rule ---
     {
@@ -205,6 +223,46 @@ ruleTester.run("server", rule, {
         },
       ],
     },
+    {
+      code: `Number("42");`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Number.isFinite(x);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "service" },
+        },
+      ],
+    },
+    {
+      code: `new Date();`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Date.now();`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "service" },
+        },
+      ],
+    },
 
     // --- IO globals in inner layers ---
     {
@@ -226,6 +284,20 @@ ruleTester.run("server", rule, {
       filename: "/project/src/core/foo.ts",
       errors: [
         { messageId: "ioGlobal", data: { name: "Request", layer: "core" } },
+      ],
+    },
+    {
+      code: `process.env.FOO;`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        { messageId: "ioGlobal", data: { name: "process", layer: "core" } },
+      ],
+    },
+    {
+      code: `process.env.API_KEY;`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        { messageId: "ioGlobal", data: { name: "process", layer: "service" } },
       ],
     },
     {

@@ -6,6 +6,8 @@ export const LAYER_NAMES = [
   "ui/hooks",
   "ui/components",
   "ui/pages",
+  "app/api",
+  "app/pages",
 ] as const;
 
 export type LayerName = (typeof LAYER_NAMES)[number];
@@ -19,9 +21,28 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "ui/hooks": ["core", "service"],
   "ui/components": ["core", "ui/hooks"],
   "ui/pages": ["core", "service", "ui/hooks", "ui/components"],
+  // app/ layers are wiring roots (entry points) — not importable by other layers
+  "app/api": ["core", "service", "adapter", "infra"],
+  "app/pages": [
+    "core",
+    "service",
+    "ui/hooks",
+    "ui/components",
+    "ui/pages",
+  ],
 };
 
+// Test files are excluded from layer constraint checks.
+// They need freedom to import across layers for fixtures and mocking.
+export function isTestFile(filePath: string): boolean {
+  return /\.(test|spec)\.[^/]+$/.test(filePath);
+}
+
 export function getLayerFromPath(filePath: string): LayerName | null {
+  // Check app/api before app/pages (more specific first)
+  if (filePath.match(/\/src\/app\/api\//)) return "app/api";
+  if (filePath.match(/\/src\/app\//)) return "app/pages";
+
   const match = filePath.match(
     /\/src\/(ui\/(?:hooks|components|pages)|core|service|adapter|infra)\//,
   );
@@ -30,7 +51,12 @@ export function getLayerFromPath(filePath: string): LayerName | null {
 }
 
 export function getLayerFromImport(importPath: string): LayerName | null {
+  // app/ layers are entry points — they should not be imported by other modules.
+  // Check only the standard layers for import resolution.
   for (const layer of LAYER_NAMES) {
+    // Skip app/ layers in import resolution — they are not importable
+    if (layer === "app/api" || layer === "app/pages") continue;
+
     if (
       importPath.includes(`/${layer}/`) ||
       importPath.startsWith(`${layer}/`) ||
@@ -55,6 +81,8 @@ export function canImport(from: LayerName, to: LayerName): boolean {
 // Globals that interact with encoded representations (serialization, parsing)
 export const ENCODING_GLOBALS = new Set([
   "JSON",
+  "Number",
+  "Date",
   "parseInt",
   "parseFloat",
   "encodeURIComponent",
@@ -72,6 +100,7 @@ export const IO_GLOBALS = new Set([
   "Response",
   "Headers",
   "FormData",
+  "process",
 ]);
 
 // Schema boundary methods (decode/encode = canonical ↔ encoded conversion)

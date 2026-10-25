@@ -171,6 +171,36 @@ ruleTester.run("react", rule, {
         },
       ],
     },
+    {
+      code: `Number("42");`,
+      filename: "/project/src/ui/hooks/use-data.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Number", layer: "ui/hooks" },
+        },
+      ],
+    },
+    {
+      code: `new Date();`,
+      filename: "/project/src/ui/components/card.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "ui/components" },
+        },
+      ],
+    },
+    {
+      code: `Date.now();`,
+      filename: "/project/src/ui/pages/home.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Date", layer: "ui/pages" },
+        },
+      ],
+    },
 
     // --- Schema boundary ---
     {

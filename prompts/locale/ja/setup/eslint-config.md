@@ -2,6 +2,24 @@
 
 プラグインがファイルパスからレイヤを検出し、全制約を内部で判定する。レイヤ別overrideは不要。
 
+## Next.jsプロジェクト
+
+```js
+import tseslint from "typescript-eslint";
+import lumaLayeredTs from "@luma-layered-ts/eslint-plugin";
+
+export default tseslint.config(
+  lumaLayeredTs.configs["recommended-next"],
+  {
+    rules: {
+      "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
+    },
+  },
+);
+```
+
+## 非Next.jsプロジェクト
+
 ```js
 import tseslint from "typescript-eslint";
 import lumaLayeredTs from "@luma-layered-ts/eslint-plugin";
@@ -16,7 +34,7 @@ export default tseslint.config(
 );
 ```
 
-React不使用:
+## React不使用
 
 ```js
 {

@@ -4,6 +4,7 @@ import {
   getLayerFromPath,
   getLayerFromImport,
   canImport,
+  isTestFile,
   ENCODING_GLOBALS,
   IO_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
@@ -53,6 +54,7 @@ export default createRule<[Options], MessageId>({
   defaultOptions: [defaultOptions],
   create(context) {
     const filePath = context.filename;
+    if (isTestFile(filePath)) return {};
     const layer = getLayerFromPath(filePath);
     if (!layer || !SERVER_LAYERS.has(layer)) return {};
 
