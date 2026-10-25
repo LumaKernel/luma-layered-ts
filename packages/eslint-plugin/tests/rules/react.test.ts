@@ -194,6 +194,16 @@ ruleTester.run("react", rule, {
       ],
     },
     {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/ui/components/board.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "ui/components" },
+        },
+      ],
+    },
+    {
       code: `Number("42");`,
       filename: "/project/src/ui/hooks/use-data.ts",
       errors: [

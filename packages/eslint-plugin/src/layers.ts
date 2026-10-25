@@ -81,6 +81,7 @@ export function isNonLayerAliasImport(importPath: string): boolean {
 // Globals that interact with encoded representations (serialization, parsing)
 export const ENCODING_GLOBALS = new Set([
   "JSON",
+  "String",
   "Number",
   "Date",
   "parseInt",

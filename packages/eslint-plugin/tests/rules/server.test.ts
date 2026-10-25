@@ -65,6 +65,11 @@ ruleTester.run("server", rule, {
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },
     { code: `parseInt("42");`, filename: "/project/src/adapter/parse.ts" },
     { code: `Number("42");`, filename: "/project/src/adapter/parse.ts" },
+    {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/adapter/format.ts",
+    },
+    { code: `String(42);`, filename: "/project/src/infra/log.ts" },
     { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
     { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
@@ -261,6 +266,26 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "decodeURIComponent", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `String.fromCharCode(65);`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `String(42);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "String", layer: "service" },
         },
       ],
     },
