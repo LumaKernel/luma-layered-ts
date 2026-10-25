@@ -240,6 +240,38 @@ ruleTester.run("react", rule, {
       ],
     },
 
+    // --- Temporal global ---
+    {
+      code: `Temporal.Now.instant().epochMilliseconds;`,
+      filename: "/project/src/ui/hooks/use-data.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "ui/hooks" },
+        },
+      ],
+    },
+    {
+      code: `Temporal.Instant.fromEpochMilliseconds(ts);`,
+      filename: "/project/src/ui/components/card.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "ui/components" },
+        },
+      ],
+    },
+    {
+      code: `Temporal.Now.instant();`,
+      filename: "/project/src/ui/pages/home.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "ui/pages" },
+        },
+      ],
+    },
+
     // --- Schema boundary ---
     {
       code: `Schema.decodeUnknown(S)(d);`,

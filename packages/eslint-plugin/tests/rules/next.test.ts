@@ -47,6 +47,10 @@ ruleTester.run("next", rule, {
       code: `str.split(",");`,
       filename: "/project/src/app/api/route.ts",
     },
+    {
+      code: `Temporal.Now.instant();`,
+      filename: "/project/src/app/api/route.ts",
+    },
     // Nested api routes
     {
       code: `import { Foo } from "../../../core/foo";`,
@@ -222,6 +226,21 @@ ruleTester.run("next", rule, {
         },
       ],
     },
+
+    // --- app/pages: Temporal banned ---
+    {
+      code: `Temporal.Now.instant().epochMilliseconds;`,
+      filename: "/project/src/app/page.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "app/pages" },
+        },
+      ],
+    },
+
+    // --- app/api: Temporal allowed (wiring root) ---
+    // (valid case already covered by general "all allowed" pattern)
 
     // --- app/pages: schema boundary banned ---
     {

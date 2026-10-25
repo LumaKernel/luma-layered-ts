@@ -73,6 +73,14 @@ ruleTester.run("server", rule, {
     { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
     { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
+      code: `Temporal.Now.instant();`,
+      filename: "/project/src/adapter/time.ts",
+    },
+    {
+      code: `Temporal.Instant.fromEpochMilliseconds(ts);`,
+      filename: "/project/src/infra/clock.ts",
+    },
+    {
       code: `Schema.decodeUnknown(S)(d);`,
       filename: "/project/src/adapter/api.ts",
     },
@@ -334,6 +342,28 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "Date", layer: "service" },
+        },
+      ],
+    },
+
+    // --- Temporal global in inner layers ---
+    {
+      code: `Temporal.Now.instant();`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Temporal.Instant.fromEpochMilliseconds(ts);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Temporal", layer: "service" },
         },
       ],
     },
