@@ -16,7 +16,7 @@ export default createRule<[Options], MessageId>({
     },
     messages: {
       noLayer:
-        "This file is not in a recognized layer directory (src/{core,service,adapter,infra,ui/{hooks,components,pages},app/}). Move it to the appropriate layer so that import and encoding constraints are enforced.",
+        "This file is not in a recognized layer directory (src/{core,service,adapter,infra,ui/{hooks,components,containers,pages},app/}). Move it to the appropriate layer so that import and encoding constraints are enforced.",
     },
     schema: [],
   },

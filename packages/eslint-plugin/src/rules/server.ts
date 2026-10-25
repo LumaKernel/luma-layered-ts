@@ -6,6 +6,7 @@ import {
   canImport,
   isTestFile,
   isNonLayerAliasImport,
+  resolveImportPath,
   ENCODING_GLOBALS,
   IO_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
@@ -65,7 +66,8 @@ export default createRule<[Options], MessageId>({
     const isInner = INNER_LAYERS.has(layer);
 
     function checkImport(importPath: string, node: TSESTree.Node): void {
-      const toLayer = getLayerFromImport(importPath);
+      const resolved = resolveImportPath(importPath, filePath);
+      const toLayer = getLayerFromImport(resolved);
       if (!toLayer) {
         if (isNonLayerAliasImport(importPath)) {
           context.report({

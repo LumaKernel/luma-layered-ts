@@ -5,6 +5,7 @@ export const LAYER_NAMES = [
   "infra",
   "ui/hooks",
   "ui/components",
+  "ui/containers",
   "ui/pages",
   "app/api",
   "app/pages",
@@ -20,10 +21,24 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   infra: ["core", "service", "adapter"],
   "ui/hooks": ["core", "service"],
   "ui/components": ["core", "ui/hooks"],
-  "ui/pages": ["core", "service", "ui/hooks", "ui/components"],
+  "ui/containers": ["core", "service", "ui/hooks", "ui/components"],
+  "ui/pages": [
+    "core",
+    "service",
+    "ui/hooks",
+    "ui/components",
+    "ui/containers",
+  ],
   // app/ layers are wiring roots (entry points) — not importable by other layers
   "app/api": ["core", "service", "adapter", "infra"],
-  "app/pages": ["core", "service", "ui/hooks", "ui/components", "ui/pages"],
+  "app/pages": [
+    "core",
+    "service",
+    "ui/hooks",
+    "ui/components",
+    "ui/containers",
+    "ui/pages",
+  ],
 };
 
 // Test and story files are excluded from layer constraint checks.
@@ -38,7 +53,7 @@ export function getLayerFromPath(filePath: string): LayerName | null {
   if (filePath.match(/\/src\/app\//)) return "app/pages";
 
   const match = filePath.match(
-    /\/src\/(ui\/(?:hooks|components|pages)|core|service|adapter|infra)\//,
+    /\/src\/(ui\/(?:hooks|components|containers|pages)|core|service|adapter|infra)\//,
   );
   if (!match) return null;
   return match[1] as LayerName;
@@ -68,6 +83,22 @@ export function getLayerFromImport(importPath: string): LayerName | null {
 export function canImport(from: LayerName, to: LayerName): boolean {
   if (from === to) return true;
   return allowedImports[from].includes(to);
+}
+
+// Resolve a relative import path against the importing file's path.
+// Returns the resolved path for relative imports, or the original path otherwise.
+export function resolveImportPath(
+  importPath: string,
+  fromFilePath: string,
+): string {
+  if (!importPath.startsWith(".")) return importPath;
+  const fromDir = fromFilePath.replace(/\/[^/]+$/, "");
+  const parts = fromDir.split("/");
+  for (const segment of importPath.split("/")) {
+    if (segment === "..") parts.pop();
+    else if (segment !== ".") parts.push(segment);
+  }
+  return parts.join("/");
 }
 
 // Detect project-internal imports via path alias that should resolve to a layer but don't.

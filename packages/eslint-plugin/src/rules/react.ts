@@ -6,6 +6,7 @@ import {
   canImport,
   isTestFile,
   isNonLayerAliasImport,
+  resolveImportPath,
   ENCODING_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
@@ -15,7 +16,12 @@ import type { LayerName } from "../layers.js";
 type Options = Record<string, never>;
 const defaultOptions: Options = {};
 
-const UI_LAYERS = new Set<LayerName>(["ui/hooks", "ui/components", "ui/pages"]);
+const UI_LAYERS = new Set<LayerName>([
+  "ui/hooks",
+  "ui/components",
+  "ui/containers",
+  "ui/pages",
+]);
 
 // components can call .display(), .trim(), .toString() — these don't interpret structure
 const COMPONENT_ALLOWED_METHODS = new Set(["display", "trim", "toString"]);
@@ -34,7 +40,7 @@ export default createRule<[Options], MessageId>({
     type: "problem",
     docs: {
       description:
-        "Enforce layered architecture for React UI layers (ui/hooks, ui/components, ui/pages). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
+        "Enforce layered architecture for React UI layers (ui/hooks, ui/components, ui/containers, ui/pages). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
     },
     messages: {
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
@@ -61,7 +67,8 @@ export default createRule<[Options], MessageId>({
     const isComponent = layer === "ui/components";
 
     function checkImport(importPath: string, node: TSESTree.Node): void {
-      const toLayer = getLayerFromImport(importPath);
+      const resolved = resolveImportPath(importPath, filePath);
+      const toLayer = getLayerFromImport(resolved);
       if (!toLayer) {
         if (isNonLayerAliasImport(importPath)) {
           context.report({
@@ -162,7 +169,7 @@ export default createRule<[Options], MessageId>({
             });
           }
         } else {
-          // hooks/pages: all string interpretation forbidden
+          // hooks/containers/pages: all string interpretation forbidden
           if (STRING_INTERPRETATION_METHODS.has(method)) {
             context.report({
               node,

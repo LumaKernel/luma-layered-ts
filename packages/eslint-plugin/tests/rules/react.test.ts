@@ -82,6 +82,40 @@ ruleTester.run("react", rule, {
 
     // --- Property access on non-global ---
     { code: `obj.JSON;`, filename: "/project/src/ui/hooks/use-data.ts" },
+
+    // --- containers: valid imports ---
+    {
+      code: `import { Foo } from "../../core/foo";`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+    {
+      code: `import { useFoo } from "../hooks/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+    {
+      code: `import { Card } from "../components/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+    {
+      code: `import { Foo } from "../../service/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+    // containers: toString allowed
+    {
+      code: `value.toString();`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+    // containers: unrelated methods fine
+    {
+      code: `arr.map(fn);`,
+      filename: "/project/src/ui/containers/game.tsx",
+    },
+
+    // --- pages: can import containers ---
+    {
+      code: `import { GameContainer } from "../containers/game";`,
+      filename: "/project/src/ui/pages/home.tsx",
+    },
   ],
   invalid: [
     // --- Import violations ---
@@ -112,6 +146,94 @@ ruleTester.run("react", rule, {
         {
           messageId: "importViolation",
           data: { fromLayer: "ui/components", toLayer: "adapter" },
+        },
+      ],
+    },
+
+    // --- containers: import violations ---
+    {
+      code: `import { Foo } from "../../adapter/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "ui/containers", toLayer: "adapter" },
+        },
+      ],
+    },
+    {
+      code: `import { Foo } from "../../infra/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "ui/containers", toLayer: "infra" },
+        },
+      ],
+    },
+    // containers cannot import pages
+    {
+      code: `import { Foo } from "../pages/bar";`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "ui/containers", toLayer: "ui/pages" },
+        },
+      ],
+    },
+    // components cannot import containers
+    {
+      code: `import { Foo } from "../containers/bar";`,
+      filename: "/project/src/ui/components/foo.tsx",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "ui/components", toLayer: "ui/containers" },
+        },
+      ],
+    },
+
+    // --- containers: encoding globals banned ---
+    {
+      code: `JSON.parse(data);`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "JSON", layer: "ui/containers" },
+        },
+      ],
+    },
+    // --- containers: schema boundary banned ---
+    {
+      code: `Schema.decodeSync(S)(d);`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "schemaBoundary",
+          data: { method: "decodeSync", layer: "ui/containers" },
+        },
+      ],
+    },
+    // --- containers: string interpretation banned (like hooks/pages) ---
+    {
+      code: `str.split(",");`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "encodedMethod",
+          data: { method: "split", layer: "ui/containers" },
+        },
+      ],
+    },
+    {
+      code: `str.trim();`,
+      filename: "/project/src/ui/containers/game.tsx",
+      errors: [
+        {
+          messageId: "encodedMethod",
+          data: { method: "trim", layer: "ui/containers" },
         },
       ],
     },
