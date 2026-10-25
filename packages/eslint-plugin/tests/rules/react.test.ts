@@ -252,6 +252,28 @@ ruleTester.run("react", rule, {
       ],
     },
 
+    // --- Intl in UI layers ---
+    {
+      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      filename: "/project/src/ui/components/card.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "ui/components" },
+        },
+      ],
+    },
+    {
+      code: `Intl.NumberFormat("en").format(n);`,
+      filename: "/project/src/ui/hooks/use-data.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "ui/hooks" },
+        },
+      ],
+    },
+
     // --- Temporal global ---
     {
       code: `Temporal.Now.instant().epochMilliseconds;`,

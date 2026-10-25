@@ -239,6 +239,18 @@ ruleTester.run("next", rule, {
       ],
     },
 
+    // --- app/pages: Intl banned ---
+    {
+      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      filename: "/project/src/app/page.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "app/pages" },
+        },
+      ],
+    },
+
     // --- app/pages: Temporal banned ---
     {
       code: `Temporal.Now.instant().epochMilliseconds;`,

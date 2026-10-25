@@ -89,6 +89,7 @@ export const ENCODING_GLOBALS = new Set([
   "Temporal",
   "globalThis",
   "Function",
+  "Intl",
   "parseInt",
   "parseFloat",
   "encodeURIComponent",
