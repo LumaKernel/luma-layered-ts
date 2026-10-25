@@ -21,7 +21,7 @@
 - encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`
 - Schema boundary禁止: `decode*`, `encode*`メソッド
-- string解釈メソッド禁止: `split`, `match`, `replace`, `includes`, `startsWith`, `endsWith`, `indexOf`, `slice`, `substring`, `trim`, `padStart`等
+- string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
 - `toString()`は許容(logging)
 
 adapter/infraはインポート行列のみ。encoded representation操作はここで行う。

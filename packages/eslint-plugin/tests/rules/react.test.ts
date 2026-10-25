@@ -284,16 +284,6 @@ ruleTester.run("react", rule, {
       ],
     },
     {
-      code: `str.includes("foo");`,
-      filename: "/project/src/ui/hooks/use-data.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "ui/hooks" },
-        },
-      ],
-    },
-    {
       code: `str.trim();`,
       filename: "/project/src/ui/hooks/use-data.ts",
       errors: [
@@ -330,13 +320,6 @@ ruleTester.run("react", rule, {
       ],
     },
     {
-      code: `str.includes("test");`,
-      filename: "/project/src/ui/components/card.tsx",
-      errors: [
-        { messageId: "componentParseMethod", data: { method: "includes" } },
-      ],
-    },
-    {
       code: `str.replace("a", "b");`,
       filename: "/project/src/ui/components/card.tsx",
       errors: [
@@ -350,14 +333,6 @@ ruleTester.run("react", rule, {
         { messageId: "componentParseMethod", data: { method: "startsWith" } },
       ],
     },
-    {
-      code: `str.slice(0, 5);`,
-      filename: "/project/src/ui/components/card.tsx",
-      errors: [
-        { messageId: "componentParseMethod", data: { method: "slice" } },
-      ],
-    },
-
     // --- String interpretation in pages (all forbidden) ---
     {
       code: `str.split(",");`,
@@ -366,16 +341,6 @@ ruleTester.run("react", rule, {
         {
           messageId: "encodedMethod",
           data: { method: "split", layer: "ui/pages" },
-        },
-      ],
-    },
-    {
-      code: `str.includes("foo");`,
-      filename: "/project/src/ui/pages/home.tsx",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "ui/pages" },
         },
       ],
     },

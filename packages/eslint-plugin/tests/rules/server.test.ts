@@ -88,6 +88,10 @@ ruleTester.run("server", rule, {
     { code: `effect.pipe(fn);`, filename: "/project/src/service/bar.ts" },
     // property access on non-global
     { code: `obj.JSON;`, filename: "/project/src/core/foo.ts" },
+    // array methods allowed (also exist on String but no type info to distinguish)
+    { code: `arr.includes(item);`, filename: "/project/src/core/foo.ts" },
+    { code: `arr.indexOf(item);`, filename: "/project/src/service/foo.ts" },
+    { code: `arr.slice(0, 5);`, filename: "/project/src/core/foo.ts" },
 
     // --- Test files: excluded from layer checks ---
     {
@@ -422,16 +426,6 @@ ruleTester.run("server", rule, {
       ],
     },
     {
-      code: `str.includes("foo");`,
-      filename: "/project/src/service/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "service" },
-        },
-      ],
-    },
-    {
       code: `str.match(/pattern/);`,
       filename: "/project/src/core/foo.ts",
       errors: [
@@ -465,26 +459,6 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedMethod",
           data: { method: "startsWith", layer: "service" },
-        },
-      ],
-    },
-    {
-      code: `str.indexOf(":");`,
-      filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "indexOf", layer: "core" },
-        },
-      ],
-    },
-    {
-      code: `str.slice(0, 10);`,
-      filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "slice", layer: "core" },
         },
       ],
     },

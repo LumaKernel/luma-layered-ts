@@ -247,16 +247,6 @@ ruleTester.run("next", rule, {
       ],
     },
     {
-      code: `str.includes("foo");`,
-      filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "encodedMethod",
-          data: { method: "includes", layer: "app/pages" },
-        },
-      ],
-    },
-    {
       code: `str.trim();`,
       filename: "/project/src/app/layout.tsx",
       errors: [

@@ -118,7 +118,9 @@ export const SCHEMA_BOUNDARY_METHODS = new Set([
   "encodePromise",
 ]);
 
-// String interpretation methods (structural access, pattern matching, content inspection)
+// String interpretation methods (structural access, pattern matching, content inspection).
+// Excludes includes/indexOf/lastIndexOf/slice — these exist on Array too and cause
+// false positives without type information.
 export const STRING_INTERPRETATION_METHODS = new Set([
   "split",
   "match",
@@ -126,12 +128,8 @@ export const STRING_INTERPRETATION_METHODS = new Set([
   "replace",
   "replaceAll",
   "search",
-  "includes",
   "startsWith",
   "endsWith",
-  "indexOf",
-  "lastIndexOf",
-  "slice",
   "substring",
   "charAt",
   "charCodeAt",
