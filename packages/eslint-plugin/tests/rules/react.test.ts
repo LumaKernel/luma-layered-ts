@@ -240,6 +240,18 @@ ruleTester.run("react", rule, {
       ],
     },
 
+    // --- globalThis bypass ---
+    {
+      code: `const j = globalThis["JSON"];`,
+      filename: "/project/src/ui/hooks/use-data.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "globalThis", layer: "ui/hooks" },
+        },
+      ],
+    },
+
     // --- Temporal global ---
     {
       code: `Temporal.Now.instant().epochMilliseconds;`,

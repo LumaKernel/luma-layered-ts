@@ -227,6 +227,18 @@ ruleTester.run("next", rule, {
       ],
     },
 
+    // --- app/pages: globalThis bypass banned ---
+    {
+      code: `const j = globalThis["JSON"];`,
+      filename: "/project/src/app/page.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "globalThis", layer: "app/pages" },
+        },
+      ],
+    },
+
     // --- app/pages: Temporal banned ---
     {
       code: `Temporal.Now.instant().epochMilliseconds;`,

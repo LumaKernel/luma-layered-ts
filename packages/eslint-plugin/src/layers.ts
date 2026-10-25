@@ -78,13 +78,16 @@ export function isNonLayerAliasImport(importPath: string): boolean {
 
 // --- Encoded representation restrictions ---
 
-// Globals that interact with encoded representations (serialization, parsing)
+// Globals that interact with encoded representations (serialization, parsing).
+// globalThis is included to prevent bypassing encoding global restrictions
+// via indirect access patterns like globalThis["JSON"].
 export const ENCODING_GLOBALS = new Set([
   "JSON",
   "String",
   "Number",
   "Date",
   "Temporal",
+  "globalThis",
   "parseInt",
   "parseFloat",
   "encodeURIComponent",

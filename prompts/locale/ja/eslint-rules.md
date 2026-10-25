@@ -18,7 +18,7 @@
 
 全レイヤでインポート行列を強制。core/serviceでは追加制約:
 
-- encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `Temporal`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
+- encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `Temporal`, `globalThis`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`
 - Schema boundary禁止: `decode*`, `encode*`メソッド
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外

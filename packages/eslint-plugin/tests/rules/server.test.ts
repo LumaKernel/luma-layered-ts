@@ -73,6 +73,10 @@ ruleTester.run("server", rule, {
     { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
     { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
+      code: `globalThis["JSON"];`,
+      filename: "/project/src/adapter/parse.ts",
+    },
+    {
       code: `Temporal.Now.instant();`,
       filename: "/project/src/adapter/time.ts",
     },
@@ -342,6 +346,28 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "Date", layer: "service" },
+        },
+      ],
+    },
+
+    // --- globalThis bypass in inner layers ---
+    {
+      code: `const j = globalThis["JSON"];`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "globalThis", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `globalThis.String;`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "globalThis", layer: "service" },
         },
       ],
     },
