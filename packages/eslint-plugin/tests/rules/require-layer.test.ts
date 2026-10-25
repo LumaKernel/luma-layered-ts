@@ -23,6 +23,7 @@ ruleTester.run("require-layer", rule, {
       code: `const x = 1;`,
       filename: "/project/src/ui/components/card.tsx",
     },
+    { code: `const x = 1;`, filename: "/project/src/ui/containers/game.tsx" },
     { code: `const x = 1;`, filename: "/project/src/ui/pages/home.tsx" },
     // Nested paths within layers
     {

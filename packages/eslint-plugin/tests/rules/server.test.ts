@@ -81,6 +81,10 @@ ruleTester.run("server", rule, {
       filename: "/project/src/adapter/parse.ts",
     },
     {
+      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      filename: "/project/src/adapter/format.ts",
+    },
+    {
       code: `performance.now();`,
       filename: "/project/src/adapter/time.ts",
     },
@@ -358,6 +362,28 @@ ruleTester.run("server", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "Date", layer: "service" },
+        },
+      ],
+    },
+
+    // --- Intl in inner layers ---
+    {
+      code: `new Intl.DateTimeFormat("ja-JP");`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "core" },
+        },
+      ],
+    },
+    {
+      code: `Intl.NumberFormat("en");`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "service" },
         },
       ],
     },

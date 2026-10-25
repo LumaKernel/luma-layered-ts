@@ -57,7 +57,7 @@ ruleTester.run("next", rule, {
       filename: "/project/src/app/api/game/route.ts",
     },
 
-    // --- app/pages: import matrix (can import core, service, ui/*) ---
+    // --- app/pages: import matrix (can import core, service, ui/* including containers) ---
     {
       code: `import { Foo } from "../core/foo";`,
       filename: "/project/src/app/page.tsx",
@@ -76,6 +76,10 @@ ruleTester.run("next", rule, {
     },
     {
       code: `import { Home } from "../ui/pages/home";`,
+      filename: "/project/src/app/page.tsx",
+    },
+    {
+      code: `import { GameContainer } from "../ui/containers/game";`,
       filename: "/project/src/app/page.tsx",
     },
     // app/pages: toString allowed
@@ -235,6 +239,18 @@ ruleTester.run("next", rule, {
         {
           messageId: "encodedGlobal",
           data: { name: "globalThis", layer: "app/pages" },
+        },
+      ],
+    },
+
+    // --- app/pages: Intl banned ---
+    {
+      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      filename: "/project/src/app/page.tsx",
+      errors: [
+        {
+          messageId: "encodedGlobal",
+          data: { name: "Intl", layer: "app/pages" },
         },
       ],
     },

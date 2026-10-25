@@ -6,7 +6,7 @@
 
 `src/`配下の全ファイルが認識されたレイヤディレクトリに属することを強制する。レイヤ外のファイルは他ルールのチェック対象外になるため、この漏れを防ぐ。
 
-認識されるディレクトリ: `src/{core,service,adapter,infra,ui/{hooks,components,pages},app/}`
+認識されるディレクトリ: `src/{core,service,adapter,infra,ui/{hooks,components,containers,pages},app/}`
 
 例外:
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
@@ -18,7 +18,7 @@
 
 全レイヤでインポート行列を強制。core/serviceでは追加制約:
 
-- encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `Temporal`, `globalThis`, `Function`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
+- encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `Temporal`, `globalThis`, `Function`, `Intl`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`, `performance`
 - Schema boundary禁止: `decode*`, `encode*`メソッド
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
@@ -30,7 +30,7 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 
 ## `react`
 
-対象: ui/hooks, ui/components, ui/pages
+対象: ui/hooks, ui/components, ui/containers, ui/pages
 
 全UIレイヤ共通:
 - インポート行列強制
@@ -43,6 +43,7 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 |---|---|---|---|---|
 | hooks | 全禁止 | - | - | ok |
 | components | parse系禁止 | ok | ok | ok |
+| containers | 全禁止 | - | - | ok |
 | pages | 全禁止 | - | - | ok |
 
 ## `next`
@@ -54,7 +55,7 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 | サブレイヤ | パス | import可能 | 制約 |
 |---|---|---|---|
 | `app/api` | `src/app/api/**` | core, service, adapter, infra | インポート行列のみ(サーバー側wiring root) |
-| `app/pages` | `src/app/**`(api以外) | core, service, ui/hooks, ui/components, ui/pages | encoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
+| `app/pages` | `src/app/**`(api以外) | core, service, ui/hooks, ui/components, ui/containers, ui/pages | encoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
 
 `app/api`のroute handlerは薄いwiring rootとして、実処理はadapter/infra/serviceに委譲する。
 `app/pages`のpage/layoutは薄いwiring rootとして、実UIは`ui/pages`や`ui/components`に委譲する。
