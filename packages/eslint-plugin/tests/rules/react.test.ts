@@ -110,6 +110,28 @@ ruleTester.run("react", rule, {
       ],
     },
 
+    // --- Imports to non-layer alias paths ---
+    {
+      code: `import { Board } from "@/engines/chess/board";`,
+      filename: "/project/src/ui/components/chess.tsx",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/engines/chess/board" },
+        },
+      ],
+    },
+    {
+      code: `import { GAME_TYPES } from "@/lib/constants";`,
+      filename: "/project/src/ui/components/sidebar.tsx",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/constants" },
+        },
+      ],
+    },
+
     // --- Encoding globals ---
     {
       code: `JSON.parse(data);`,

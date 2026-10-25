@@ -26,6 +26,8 @@
 
 adapter/infraはインポート行列のみ。encoded representation操作はここで行う。
 
+全レイヤ共通: `@/`エイリアスimportがレイヤディレクトリに解決されない場合は`importNonLayer`エラー。`@/engines/foo`や`@/lib/bar`のようなレイヤ外パスへのimportを検出する。
+
 ## `react`
 
 対象: ui/hooks, ui/components, ui/pages

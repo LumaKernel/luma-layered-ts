@@ -5,6 +5,7 @@ import {
   getLayerFromImport,
   canImport,
   isTestFile,
+  isNonLayerAliasImport,
   ENCODING_GLOBALS,
   IO_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
@@ -25,6 +26,7 @@ const INNER_LAYERS = new Set<LayerName>(["core", "service"]);
 
 type MessageId =
   | "importViolation"
+  | "importNonLayer"
   | "encodedGlobal"
   | "ioGlobal"
   | "schemaBoundary"
@@ -40,6 +42,8 @@ export default createRule<[Options], MessageId>({
     },
     messages: {
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
+      importNonLayer:
+        "Import '{{importPath}}' does not resolve to a recognized layer. Move the target into a layer directory.",
       encodedGlobal:
         "'{{name}}' is an encoded representation API. Not allowed in '{{layer}}'. Use canonical types (Effect.ts) instead.",
       ioGlobal:
@@ -62,7 +66,16 @@ export default createRule<[Options], MessageId>({
 
     function checkImport(importPath: string, node: TSESTree.Node): void {
       const toLayer = getLayerFromImport(importPath);
-      if (!toLayer) return;
+      if (!toLayer) {
+        if (isNonLayerAliasImport(importPath)) {
+          context.report({
+            node,
+            messageId: "importNonLayer",
+            data: { importPath },
+          });
+        }
+        return;
+      }
       if (!canImport(layer as LayerName, toLayer)) {
         context.report({
           node,

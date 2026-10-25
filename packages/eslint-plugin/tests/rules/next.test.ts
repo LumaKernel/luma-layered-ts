@@ -157,6 +157,40 @@ ruleTester.run("next", rule, {
       ],
     },
 
+    // --- app/api: imports to non-layer alias paths ---
+    {
+      code: `import { getEngine } from "@/engines/types";`,
+      filename: "/project/src/app/api/move/route.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/engines/types" },
+        },
+      ],
+    },
+    {
+      code: `import { kv } from "@/lib/kv";`,
+      filename: "/project/src/app/api/route.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/kv" },
+        },
+      ],
+    },
+
+    // --- app/pages: imports to non-layer alias paths ---
+    {
+      code: `import { GAME_TYPES } from "@/lib/constants";`,
+      filename: "/project/src/app/page.tsx",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/constants" },
+        },
+      ],
+    },
+
     // --- app/pages: encoding globals banned ---
     {
       code: `JSON.parse(data);`,

@@ -70,6 +70,12 @@ export function canImport(from: LayerName, to: LayerName): boolean {
   return allowedImports[from].includes(to);
 }
 
+// Detect project-internal imports via path alias that should resolve to a layer but don't.
+// Only checks @/ alias imports — relative imports (./  ../) are assumed same-layer.
+export function isNonLayerAliasImport(importPath: string): boolean {
+  return importPath.startsWith("@/");
+}
+
 // --- Encoded representation restrictions ---
 
 // Globals that interact with encoded representations (serialization, parsing)

@@ -43,6 +43,15 @@ ruleTester.run("server", rule, {
       code: `import { Effect } from "effect";`,
       filename: "/project/src/core/foo.ts",
     },
+    // @/ alias imports to recognized layers are fine
+    {
+      code: `import { Foo } from "@/core/bar";`,
+      filename: "/project/src/service/foo.ts",
+    },
+    {
+      code: `import { Foo } from "@/service/bar";`,
+      filename: "/project/src/adapter/foo.ts",
+    },
     // non-layer files not checked
     {
       code: `import { Foo } from "./core/foo";`,
@@ -144,6 +153,38 @@ ruleTester.run("server", rule, {
         {
           messageId: "importViolation",
           data: { fromLayer: "service", toLayer: "ui/components" },
+        },
+      ],
+    },
+
+    // --- Imports to non-layer alias paths ---
+    {
+      code: `import { Foo } from "@/engines/chess/board";`,
+      filename: "/project/src/core/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/engines/chess/board" },
+        },
+      ],
+    },
+    {
+      code: `import { BAR } from "@/lib/constants";`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/lib/constants" },
+        },
+      ],
+    },
+    {
+      code: `import { Baz } from "@/utils/helper";`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [
+        {
+          messageId: "importNonLayer",
+          data: { importPath: "@/utils/helper" },
         },
       ],
     },
