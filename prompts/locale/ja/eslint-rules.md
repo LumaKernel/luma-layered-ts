@@ -60,6 +60,45 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 `app/api`のroute handlerは薄いwiring rootとして、実処理はadapter/infra/serviceに委譲する。
 `app/pages`のpage/layoutは薄いwiring rootとして、実UIは`ui/pages`や`ui/components`に委譲する。
 
+## 併用推奨ルール
+
+`eslint:recommended`外で、encoding globals禁止の迂回を防ぐために有効化すべきルール。
+
+| ルール | 防ぐ迂回パターン |
+|---|---|
+| `no-implicit-coercion` | `+str`(`Number(str)`相当)、`!!val`、`""+val`。`disallowTemplateShorthand: true`で`` `${val}` ``も検出 |
+| `no-eval` | `eval()`による全制約の回避 |
+| `no-new-func` | `new Function("code")`による動的コード生成。`Function`のglobals禁止と併用 |
+| `no-new-wrappers` | `new String()`, `new Number()`, `new Boolean()` |
+| `eqeqeq` | `==`による暗黙の型強制 |
+
+typescript-eslint(recommended-type-checked外):
+
+| ルール | 防ぐ迂回パターン |
+|---|---|
+| `@typescript-eslint/restrict-template-expressions` (strict) | `` `${num}` ``による暗黙のString変換。`allowNumber: false`で数値も検出 |
+| `@typescript-eslint/restrict-plus-operands` (strict) | `str + num`による暗黙の型強制。`allowNumberAndString: false`で検出 |
+| `@typescript-eslint/strict-boolean-expressions` | `if (str)`による暗黙のboolean変換 |
+| `@typescript-eslint/no-implied-eval` | `setTimeout("code")`の型情報付き検出 |
+
+設定例:
+
+```js
+{
+  rules: {
+    "no-implicit-coercion": ["error", { disallowTemplateShorthand: true }],
+    "no-eval": "error",
+    "no-new-func": "error",
+    "no-new-wrappers": "error",
+    "eqeqeq": ["error", "always"],
+    "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: false, allowBoolean: false }],
+    "@typescript-eslint/restrict-plus-operands": ["error", { allowNumberAndString: false }],
+    "@typescript-eslint/strict-boolean-expressions": "error",
+    "@typescript-eslint/no-implied-eval": "error",
+  },
+}
+```
+
 ## Config
 
 ```js
