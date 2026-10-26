@@ -1,4 +1,4 @@
-# ESLint rules
+# ESLintルール
 
 `@luma-layered-ts/eslint-plugin`は4つのルールを提供する。
 

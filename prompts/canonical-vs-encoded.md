@@ -11,8 +11,8 @@ inner layerの型はcanonical representation。JSON表現はencoded boundary rep
 | `BigDecimal` | `string` (numeric) | 精度を落とさない |
 | `Brand<"UserId">` | `string` | |
 | `ReadonlyArray<T>` | `T[]` | inner layerではimmutable必須 |
-| `Redacted<string>` | `string` | |
-| tagged union (`_tag`) | JSON discriminator | exhaustive switch |
+| `Redacted<string>` | `string` | ログに出ない |
+| tagged union (`_tag`) | JSON discriminator | switch exhaustiveで網羅性保証 |
 | `HashMap` / `StrictReadonlyMap` | `Record<K, V>` | TSの`ReadonlyMap`は不完全。`@luma-layered-ts/types`を使う |
 | `Chunk<T>` | `T[]` | |
 | `Duration` | milliseconds number | |

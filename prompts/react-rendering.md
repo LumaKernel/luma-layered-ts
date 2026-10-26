@@ -1,4 +1,4 @@
-# React rendering rules
+# Reactレンダリングルール
 
 string解釈は中間層で禁止。componentsで`.display()`を呼んで描画するだけ。分岐はtagged union(`_tag`)。
 
