@@ -81,22 +81,43 @@ typescript-eslint(recommended-type-checked外):
 | `@typescript-eslint/strict-boolean-expressions` | `if (str)`による暗黙のboolean変換 |
 | `@typescript-eslint/no-implied-eval` | `setTimeout("code")`の型情報付き検出 |
 
+`@luma-dev/eslint-plugin-luma-ts`(`recommended` + opt-in):
+
+| ルール | 役割 |
+|---|---|
+| `luma-ts/no-type-assertion-allow-xstate` (opt-in) | type assertion全禁止。XStateの`{} as T`型プレースホルダのみ許容。XState使用時に有効化 |
+| `luma-ts/no-date` (recommended) | `Date`禁止 |
+| `luma-ts/no-string` (recommended) | `String`禁止 |
+| `luma-ts/prefer-immutable` (recommended) | immutable推奨 |
+| `luma-ts/no-as-unknown-as` (recommended) | `as unknown as T`禁止 |
+| `luma-ts/no-explicit-return-is` (recommended) | 明示的`is`戻り値禁止（推論に任せる） |
+| `luma-ts/no-ts-private` (recommended) | TS private禁止 |
+| `luma-ts/require-satisfies-in-tls` (recommended) | template literal stringsでsatisfies要求 |
+
 設定例:
 
 ```js
-{
-  rules: {
-    "no-implicit-coercion": ["error", { disallowTemplateShorthand: true }],
-    "no-eval": "error",
-    "no-new-func": "error",
-    "no-new-wrappers": "error",
-    "eqeqeq": ["error", "always"],
-    "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: false, allowBoolean: false }],
-    "@typescript-eslint/restrict-plus-operands": ["error", { allowNumberAndString: false }],
-    "@typescript-eslint/strict-boolean-expressions": "error",
-    "@typescript-eslint/no-implied-eval": "error",
+import lumaTs from "@luma-dev/eslint-plugin-luma-ts";
+
+export default [
+  lumaTs.configs.recommended,
+  {
+    rules: {
+      // opt-in: XState使用時
+      "luma-ts/no-type-assertion-allow-xstate": "error",
+      // 迂回防止
+      "no-implicit-coercion": ["error", { disallowTemplateShorthand: true }],
+      "no-eval": "error",
+      "no-new-func": "error",
+      "no-new-wrappers": "error",
+      "eqeqeq": ["error", "always"],
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: false, allowBoolean: false }],
+      "@typescript-eslint/restrict-plus-operands": ["error", { allowNumberAndString: false }],
+      "@typescript-eslint/strict-boolean-expressions": "error",
+      "@typescript-eslint/no-implied-eval": "error",
+    },
   },
-}
+];
 ```
 
 ## Config
