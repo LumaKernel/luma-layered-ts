@@ -66,7 +66,26 @@ ruleTester.run("require-unsafe-dir", rule, {
       code: `import { useEffect } from "./_unsafe_/use-effect";`,
       filename: "/project/src/ui/hooks/foo.ts",
     },
-    { code: `obj["useEffect"];`, filename: "/project/src/ui/hooks/foo.ts" },
+    // Inside _unsafe_/: direct calls, wrapped in a custom hook
+    {
+      code: `import { useEffect } from "react";\nexport function useSub() { useEffect(() => {}, []); }`,
+      filename: "/project/src/ui/hooks/_unsafe_/use-sub.ts",
+    },
+    {
+      code: `import * as React from "react";\nexport function useSub() { React.useLayoutEffect(() => {}); }`,
+      filename: "/project/src/ui/hooks/_unsafe_/use-sub.ts",
+    },
+    {
+      code: `import { useEffect, useMemo } from "react";\nexport { useMemo } from "react";`,
+      filename: "/project/src/ui/hooks/_unsafe_/use-sub.ts",
+    },
+    // Class methods with other names
+    {
+      code: `class A extends Component { render() { return null; } }`,
+      filename: "/project/src/ui/components/a.tsx",
+    },
+    // Computed access on non-React objects
+    { code: `obj[key];`, filename: "/project/src/ui/hooks/foo.ts" },
     // Not directives
     { code: `// eslint is a linter\nconst x = 1;`, filename: outside },
     {
@@ -132,6 +151,79 @@ ruleTester.run("require-unsafe-dir", rule, {
       "useEffect",
       "/project/src/ui/components/card.stories.tsx",
     ),
+    effect(`obj["useEffect"];`, "useEffect"),
+    effect(`React["useLayoutEffect"](() => {});`, "useLayoutEffect"),
+    // Class component lifecycle
+    ...[
+      "componentDidMount",
+      "componentDidUpdate",
+      "componentWillUnmount",
+      "UNSAFE_componentWillMount",
+    ].map((name) => ({
+      code: `class A extends Component { ${name}() {} }`,
+      filename: "/project/src/ui/components/a.tsx",
+      errors: [
+        { messageId: "lifecycleOutsideUnsafeDir" as const, data: { name } },
+      ],
+    })),
+    {
+      code: `class A extends Component { componentDidMount = () => {}; }`,
+      filename: "/project/src/ui/components/a.tsx",
+      errors: [
+        {
+          messageId: "lifecycleOutsideUnsafeDir",
+          data: { name: "componentDidMount" },
+        },
+      ],
+    },
+    // Computed access on React hides the API
+    {
+      code: `import * as React from "react";\nReact[key](() => {});`,
+      filename: "/project/src/ui/hooks/foo.ts",
+      errors: [{ messageId: "dynamicReactAccess", data: { name: "React" } }],
+    },
+    {
+      code: `import R from "react";\nconst f = R[key];`,
+      filename: "/project/src/ui/hooks/_unsafe_/foo.ts",
+      errors: [{ messageId: "dynamicReactAccess", data: { name: "R" } }],
+    },
+    // Inside _unsafe_/: effect hooks must not leave the directory
+    ...[
+      [`export { useEffect } from "react";`, "useEffect"],
+      [`export { useLayoutEffect as useLE } from "react";`, "useLayoutEffect"],
+      [
+        `import { useEffect } from "react";\nexport { useEffect };`,
+        "useEffect",
+      ],
+      [
+        `import { useEffect as e } from "react";\nexport const useE = e;`,
+        "useEffect",
+      ],
+      [
+        `import React from "react";\nexport default React.useEffect;`,
+        "useEffect",
+      ],
+      [`import React from "react";\nconst { useEffect } = React;`, "useEffect"],
+      [
+        `import { useEffect } from "react";\nexport const run = (f: typeof useEffect) => f;\nrun(useEffect);`,
+        "useEffect",
+      ],
+    ].map(([code, name]) => ({
+      code,
+      filename: "/project/src/ui/hooks/_unsafe_/use-sub.ts",
+      errors: [{ messageId: "effectEscape" as const, data: { name } }],
+    })),
+    ...[
+      "/project/src/ui/hooks/_unsafe_/index.ts",
+      "/project/src/ui/hooks/index.ts",
+    ].map((filename) => ({
+      code: `export * from "react";`,
+      filename,
+      errors: [
+        { messageId: "reactReexportAll" as const, data: { source: "react" } },
+      ],
+    })),
+
     // Each directive is reported
     {
       code: `// @ts-ignore\nconst a = 1;\n/* c8 ignore next */\nconst b = 2;`,

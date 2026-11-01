@@ -14,7 +14,9 @@
 
 ## `require-unsafe-dir`
 
-検査を抑制するディレクティブとReact effect hookを`_unsafe_/`配下のファイル以外で禁止する(対象はlayers.md)。effect hookは`react`, `preact/hooks`, `preact/compat`からのimport、`React.useEffect`形式のアクセス、分割代入を検出する。`src/`外やテストファイルも対象。
+検査を抑制するディレクティブとReact effect hookを`_unsafe_/`配下のファイル以外で禁止する(対象はlayers.md)。effect hookは`react`, `preact/hooks`, `preact/compat`からのimport、`React.useEffect`/`React["useEffect"]`形式のアクセス、分割代入を検出する。クラスコンポーネントのライフサイクルメソッド(`componentDidMount`, `componentDidUpdate`, `componentWillUnmount`, `getSnapshotBeforeUpdate`, 旧`componentWill*`/`UNSAFE_*`)も同じ扱い。
+
+`_unsafe_/`内でもeffect hookは直接呼び出しのみ許可。再export、別名への代入、値としての受け渡しはエラー(`_unsafe_/`の外に生のeffect hookを持ち出せるため)。`export * from "react"`と、Reactのdefault/namespace importへの計算されたプロパティアクセス(`React[key]`)はどこでもエラー。`src/`外やテストファイルも対象。
 
 `/* eslint-disable */`はこのルール自身も抑制できてしまうため、`recommended`系configは`linterOptions.noInlineConfig: true`を設定する。`unsafe-dir` configを`recommended`系の後に置き、`_unsafe_/`配下だけinline configを有効にする(未使用ディレクティブはerror)。`unsafe-dir`を忘れると`_unsafe_/`内のディレクティブも効かず、元のエラーが残る。
 
