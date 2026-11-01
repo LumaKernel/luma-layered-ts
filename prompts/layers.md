@@ -15,12 +15,21 @@
 
 `src/main.ts`は合成ルート。全レイヤからimport可。
 
+## `_unsafe_/`
+
+検査を抑制するディレクティブ(`eslint-disable*`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `istanbul|c8|v8 ignore`, `node:coverage ignore|disable`, `biome-ignore`, `oxlint-disable*`)は`_unsafe_/`ディレクトリ配下のファイルにしか書けない。テストファイルも同じ。
+React effect hook(`useEffect`, `useLayoutEffect`, `useInsertionEffect`)の使用も同じ扱い。クラスコンポーネントのライフサイクルメソッドも同じ。React外との同期は`_unsafe_/`内のカスタムhookに閉じ込め、外にはそのhookを公開する。
+
+`_unsafe_/`はそのコードが属するレイヤの中に置く(`src/infra/_unsafe_/`, `src/core/foo/_unsafe_/`)。レイヤの制約はそのまま適用される。抑制が必要な最小限のコードだけを切り出し、型安全なインターフェースで包んで同じレイヤに公開する。
+
 ## Next.js app router
 
 | ディレクトリ | import可 | 特徴 |
 |---|---|---|
 | `src/app/api/**` | core, service, adapter, infra | サーバー側wiring root。実処理はadapter/infra/serviceに委譲。 |
 | `src/app/**`(api以外) | core, service, adapter, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。 |
+
+Next.jsが`src/`直下に要求する規約ファイルもwiring root。`proxy`, `middleware`, `instrumentation`はapp/api、`instrumentation-client`, `mdx-components`はapp/pagesと同じ制約。
 
 app/配下は薄いエントリーポイント。ロジックやUI実装を直接書かない。
 
