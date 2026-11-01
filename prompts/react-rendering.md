@@ -6,6 +6,8 @@ string解釈は中間層で禁止。componentsで`.display()`を呼んで描画�
 
 domain型を返す。JSX禁止。`.display()`禁止。
 
+effect hookは`ui/hooks/_unsafe_/`内のカスタムhookでのみ使う(layers.mdの`_unsafe_/`)。派生値は描画中に計算、イベント起因の処理はハンドラ、状態遷移はXStateに置き、effectに頼らない。
+
 ## components
 
 末端の描画単位。他のcomponentを合成してページを構成するのはpagesの役割。

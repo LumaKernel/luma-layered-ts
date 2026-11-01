@@ -1,5 +1,5 @@
 import { RuleTester } from "@typescript-eslint/rule-tester";
-import rule from "../../src/rules/unsafe-directive";
+import rule from "../../src/rules/require-unsafe-dir";
 
 const ruleTester = new RuleTester({
   // Unscoped eslint-disable would suppress this rule itself; that case is covered with
@@ -20,11 +20,25 @@ function invalid(code: string, directive: string, filename = outside) {
   return {
     code,
     filename,
-    errors: [{ messageId: "outsideUnsafeDir" as const, data: { directive } }],
+    errors: [
+      { messageId: "directiveOutsideUnsafeDir" as const, data: { directive } },
+    ],
   };
 }
 
-ruleTester.run("unsafe-directive", rule, {
+function effect(
+  code: string,
+  name: string,
+  filename = "/project/src/ui/hooks/foo.ts",
+) {
+  return {
+    code,
+    filename,
+    errors: [{ messageId: "effectOutsideUnsafeDir" as const, data: { name } }],
+  };
+}
+
+ruleTester.run("require-unsafe-dir", rule, {
   valid: [
     // Inside _unsafe_/: any directive allowed
     {
@@ -39,9 +53,26 @@ ruleTester.run("unsafe-directive", rule, {
       code: `/* eslint-disable */`,
       filename: "/project/scripts/_unsafe_/gen.ts",
     },
+    {
+      code: `import { useEffect } from "react";\nuseEffect(() => {}, []);`,
+      filename: "/project/src/ui/hooks/_unsafe_/use-subscription.ts",
+    },
+    // Effect-like names that are not React effect hooks
+    {
+      code: `import { useEffectEvent, useMemo } from "react";`,
+      filename: "/project/src/ui/hooks/foo.ts",
+    },
+    {
+      code: `import { useEffect } from "./_unsafe_/use-effect";`,
+      filename: "/project/src/ui/hooks/foo.ts",
+    },
+    { code: `obj["useEffect"];`, filename: "/project/src/ui/hooks/foo.ts" },
     // Not directives
     { code: `// eslint is a linter\nconst x = 1;`, filename: outside },
-    { code: `// see @ts-ignore usage in docs\nconst x = 1;`, filename: outside },
+    {
+      code: `// see @ts-ignore usage in docs\nconst x = 1;`,
+      filename: outside,
+    },
     { code: `// eslint-enable\nconst x = 1;`, filename: outside },
     { code: `// v8 ignored this\nconst x = 1;`, filename: outside },
     { code: `/* prettier-ignore */\nconst x = 1;`, filename: outside },
@@ -51,7 +82,10 @@ ruleTester.run("unsafe-directive", rule, {
   invalid: [
     // ESLint
     invalid(`/* eslint-disable no-console */`, "eslint-disable"),
-    invalid(`// eslint-disable-next-line no-console`, "eslint-disable-next-line"),
+    invalid(
+      `// eslint-disable-next-line no-console`,
+      "eslint-disable-next-line",
+    ),
     invalid(`f(); // eslint-disable-line no-console`, "eslint-disable-line"),
     invalid(`/* eslint no-console: off */`, "eslint"),
     // TypeScript
@@ -67,18 +101,50 @@ ruleTester.run("unsafe-directive", rule, {
     invalid(`// node:coverage disable`, "node:coverage disable"),
     // Other linters
     invalid(`// biome-ignore lint/style: reason`, "biome-ignore"),
-    invalid(`// oxlint-disable-next-line no-console`, "oxlint-disable-next-line"),
+    invalid(
+      `// oxlint-disable-next-line no-console`,
+      "oxlint-disable-next-line",
+    ),
     // Test files are not exempt
-    invalid(`// @ts-expect-error`, "@ts-expect-error", "/project/src/core/foo.test.ts"),
+    invalid(
+      `// @ts-expect-error`,
+      "@ts-expect-error",
+      "/project/src/core/foo.test.ts",
+    ),
     // A directory merely containing "_unsafe_" in its name is not enough
-    invalid(`// @ts-ignore`, "@ts-ignore", "/project/src/core/not_unsafe_/foo.ts"),
+    invalid(
+      `// @ts-ignore`,
+      "@ts-ignore",
+      "/project/src/core/not_unsafe_/foo.ts",
+    ),
+    // React effect hooks
+    effect(`import { useEffect } from "react";`, "useEffect"),
+    effect(
+      `import { useLayoutEffect as useLE } from "react";`,
+      "useLayoutEffect",
+    ),
+    effect(`import { useInsertionEffect } from "react";`, "useInsertionEffect"),
+    effect(`import { useEffect } from "preact/hooks";`, "useEffect"),
+    effect(`React.useEffect(() => {}, []);`, "useEffect"),
+    effect(`const { useEffect } = React;`, "useEffect"),
+    effect(
+      `import { useEffect } from "react";`,
+      "useEffect",
+      "/project/src/ui/components/card.stories.tsx",
+    ),
     // Each directive is reported
     {
       code: `// @ts-ignore\nconst a = 1;\n/* c8 ignore next */\nconst b = 2;`,
       filename: outside,
       errors: [
-        { messageId: "outsideUnsafeDir", data: { directive: "@ts-ignore" } },
-        { messageId: "outsideUnsafeDir", data: { directive: "c8 ignore" } },
+        {
+          messageId: "directiveOutsideUnsafeDir",
+          data: { directive: "@ts-ignore" },
+        },
+        {
+          messageId: "directiveOutsideUnsafeDir",
+          data: { directive: "c8 ignore" },
+        },
       ],
     },
   ],

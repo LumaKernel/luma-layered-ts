@@ -9,8 +9,8 @@ describe("index exports", () => {
       "next",
       "react",
       "require-layer",
+      "require-unsafe-dir",
       "server",
-      "unsafe-directive",
     ]);
   });
 
@@ -19,8 +19,8 @@ describe("index exports", () => {
     expect(recommendedRules).toEqual([
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
+      "@luma-layered-ts/require-unsafe-dir",
       "@luma-layered-ts/server",
-      "@luma-layered-ts/unsafe-directive",
     ]);
   });
 
@@ -30,8 +30,8 @@ describe("index exports", () => {
       "@luma-layered-ts/next",
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
+      "@luma-layered-ts/require-unsafe-dir",
       "@luma-layered-ts/server",
-      "@luma-layered-ts/unsafe-directive",
     ]);
   });
 });
@@ -51,7 +51,7 @@ describe("unsafe-dir config", () => {
       .map((m) => `${m.severity} ${m.ruleId ?? "-"}: ${m.message}`);
   }
 
-  it("eslint-disable outside _unsafe_/ suppresses nothing, including unsafe-directive itself", () => {
+  it("eslint-disable outside _unsafe_/ suppresses nothing, including require-unsafe-dir itself", () => {
     expect(
       lint(
         "/* eslint-disable */\nconsole.log(1);\n",
@@ -60,7 +60,7 @@ describe("unsafe-dir config", () => {
     ).toMatchInlineSnapshot(`
       [
         "1 -: '/* eslint-disable */' has no effect because you have 'noInlineConfig' setting in your config.",
-        "2 @luma-layered-ts/unsafe-directive: 'eslint-disable' suppresses checks. Move the code that needs it into a _unsafe_/ directory.",
+        "2 @luma-layered-ts/require-unsafe-dir: 'eslint-disable' suppresses checks. Move the code that needs it into a _unsafe_/ directory.",
         "2 no-console: Unexpected console statement.",
       ]
     `);

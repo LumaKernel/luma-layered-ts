@@ -12,9 +12,9 @@
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
 - テストファイル(`.test.ts`, `.spec.ts`)とStorybook(`.stories.tsx`)はレイヤ制約(require-layer, server, react, next)から除外。フィクスチャ作成のためにレイヤ横断importが必要
 
-## `unsafe-directive`
+## `require-unsafe-dir`
 
-検査を抑制するディレクティブを`_unsafe_/`配下のファイル以外で禁止する(対象はlayers.md)。`src/`外やテストファイルも対象。
+検査を抑制するディレクティブとReact effect hookを`_unsafe_/`配下のファイル以外で禁止する(対象はlayers.md)。effect hookは`react`, `preact/hooks`, `preact/compat`からのimport、`React.useEffect`形式のアクセス、分割代入を検出する。`src/`外やテストファイルも対象。
 
 `/* eslint-disable */`はこのルール自身も抑制できてしまうため、`recommended`系configは`linterOptions.noInlineConfig: true`を設定する。`unsafe-dir` configを`recommended`系の後に置き、`_unsafe_/`配下だけinline configを有効にする(未使用ディレクティブはerror)。`unsafe-dir`を忘れると`_unsafe_/`内のディレクティブも効かず、元のエラーが残る。
 
@@ -132,7 +132,7 @@ export default [
 import lumaLayeredTs from "@luma-layered-ts/eslint-plugin";
 
 export default [
-  lumaLayeredTs.configs["recommended-next"], // require-layer + server + react + next + unsafe-directive
+  lumaLayeredTs.configs["recommended-next"], // require-layer + server + react + next + require-unsafe-dir
   lumaLayeredTs.configs["unsafe-dir"],
 ];
 ```
@@ -141,7 +141,7 @@ Next.js不使用:
 
 ```js
 export default [
-  lumaLayeredTs.configs.recommended, // require-layer + server + react + unsafe-directive
+  lumaLayeredTs.configs.recommended, // require-layer + server + react + require-unsafe-dir
   lumaLayeredTs.configs["unsafe-dir"],
 ];
 ```
