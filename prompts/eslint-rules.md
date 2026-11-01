@@ -28,7 +28,7 @@
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`, `performance`
 - Schema boundary禁止: `decode*`, `encode*`メソッド
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
-- `toString()`は許容(logging)
+- 文字列生成禁止: 補間を含むテンプレートリテラル、文字列リテラルを含む`+`/`+=`、`join`, `toString`, `toFixed`, `toPrecision`, `toExponential`, `toUpperCase`, `toLowerCase`, `toLocale*`。文字列はencodedまたは表示の表現なのでadapterで生成する。補間なしのテンプレートリテラルと文字列リテラル(定数、`_tag`)は許可。型情報なしでは両辺が変数の`+`は区別できず検出しない
 
 adapter/infraはencoded representation操作を行う層。encoding globals・Schema boundary・string解釈は許可。
 
@@ -57,12 +57,12 @@ infraはインポート行列のみ。
 
 レイヤ別string制約:
 
-| Layer | string解釈 | `.display()` | `.trim()` | `.toString()` |
-|---|---|---|---|---|
-| hooks | 全禁止 | - | - | ok |
-| components | parse系禁止 | ok | ok | ok |
-| containers | 全禁止 | - | - | ok |
-| pages | 全禁止 | - | - | ok |
+| Layer | string解釈 | `.trim()` | `.toString()` |
+|---|---|---|---|
+| hooks | 全禁止 | - | ok |
+| components | parse系禁止 | ok | ok |
+| containers | 全禁止 | - | ok |
+| pages | 全禁止 | - | ok |
 
 ## `next`
 

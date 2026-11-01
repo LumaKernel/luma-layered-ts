@@ -4,12 +4,12 @@
 
 | ディレクトリ | import可 | 特徴 |
 |---|---|---|
-| `src/core/` | 自身のみ | Schema定義のみ。decode/encode禁止。null/undefined禁止(Optionを使う)。副作用なし。 |
+| `src/core/` | 自身のみ | Schema定義のみ。decode/encode禁止。null/undefined禁止(Optionを使う)。副作用なし。文字列を生成しない。 |
 | `src/service/` | core | Effect Service/Layer定義。domain型のみ受け渡し。生JSON・生string禁止。 |
 | `src/adapter/` | core, service | 境界層。Schema decode/encode、JSON操作、string解釈はここ(とinfra)だけで許可。決定的で実行環境に依存しない純粋な変換に限り、サーバーとクライアントの両方から使う。IO・時刻・乱数・Node.js組み込みは禁止。 |
 | `src/infra/` | core, service, adapter | 具象IO実装。DB、HTTP、ファイルシステム。 |
 | `src/ui/hooks/` | core, service, adapter | UIロジック。JSX禁止。string操作禁止。クライアント側の入力(URL、storage、ファイル、レスポンス)はadapterの関数でdecodeする。 |
-| `src/ui/components/` | core, ui/hooks | 描画専用。`.display()`呼び出し可。string解釈(split/match等)は禁止。 |
+| `src/ui/components/` | core, ui/hooks | 描画専用。受け取った表示テキストを描画する。string解釈(split/match等)は禁止。 |
 | `src/ui/containers/` | core, service, ui/hooks, ui/components | 合成+状態管理。encoding globals禁止。string解釈全禁止。 |
 | `src/ui/pages/` | core, service, ui/hooks, ui/components, ui/containers | ページ合成。直接のstring抽出禁止。 |
 

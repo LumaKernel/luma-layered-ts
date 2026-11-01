@@ -63,11 +63,7 @@ ruleTester.run("react", rule, {
     { code: `str.split(",");`, filename: "/project/src/adapter/parse.ts" },
     { code: `JSON.parse(data);`, filename: "/project/src/main.ts" },
 
-    // --- components: display/trim/toString allowed ---
-    {
-      code: `user.name.display();`,
-      filename: "/project/src/ui/components/card.tsx",
-    },
+    // --- components: trim/toString allowed ---
     { code: `text.trim();`, filename: "/project/src/ui/components/card.tsx" },
     {
       code: `value.toString();`,

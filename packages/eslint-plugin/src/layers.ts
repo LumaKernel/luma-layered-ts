@@ -287,3 +287,21 @@ export const INTL_LOCALE_CONSTRUCTORS = new Set([
   "Segmenter",
   "DurationFormat",
 ]);
+
+// --- String construction (core/service) ---
+// Inner layers hold canonical values only. Strings are encoded or display representations,
+// so they are produced in adapter (codecs and display formatters).
+export const STRING_CONSTRUCTION_METHODS = new Set([
+  "join",
+  "toString",
+  "toFixed",
+  "toPrecision",
+  "toExponential",
+  "toUpperCase",
+  "toLowerCase",
+  "toLocaleString",
+  "toLocaleDateString",
+  "toLocaleTimeString",
+  "toLocaleUpperCase",
+  "toLocaleLowerCase",
+]);

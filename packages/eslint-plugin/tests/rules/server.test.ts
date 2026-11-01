@@ -143,9 +143,18 @@ ruleTester.run("server", rule, {
     { code: `encodeURIComponent(s);`, filename: "/project/src/infra/url.ts" },
 
     // --- core/service: allowed operations ---
-    // toString for logging
-    { code: `value.toString();`, filename: "/project/src/service/foo.ts" },
-    { code: `value.toString();`, filename: "/project/src/core/foo.ts" },
+    // String literals as constants and tags, template literals without interpolation
+    {
+      code: `const tag = "Black"; const t = \`fixed\`; type K = \`k_\${string}\`;`,
+      filename: "/project/src/core/foo.ts",
+    },
+    // + without a string literal operand is assumed numeric
+    { code: `const n = a + b; n += 1;`, filename: "/project/src/core/foo.ts" },
+    // Strings are built in adapter
+    {
+      code: `const s = \`\${a}-\${b}\`; arr.join(",");`,
+      filename: "/project/src/adapter/foo.ts",
+    },
     // unrelated methods
     { code: `arr.map(fn);`, filename: "/project/src/core/foo.ts" },
     { code: `effect.pipe(fn);`, filename: "/project/src/service/bar.ts" },
@@ -181,6 +190,33 @@ ruleTester.run("server", rule, {
     },
   ],
   invalid: [
+    // --- core/service: string construction ---
+    ...(
+      [
+        [
+          "const s = `${a}-${b}`;",
+          "Template literal interpolation",
+          "core",
+        ],
+        ["const s = tag`${a}`;", "Template literal interpolation", "core"],
+        ['const s = "#" + id;', "String concatenation", "core"],
+        ["const s = id + `x`;", "String concatenation", "service"],
+        ['s += "x";', "String concatenation", "core"],
+        ['parts.join("/");', ".join()", "core"],
+        ["value.toString();", ".toString()", "core"],
+        ["value.toString();", ".toString()", "service"],
+        ["n.toFixed(2);", ".toFixed()", "core"],
+        ["s.toUpperCase();", ".toUpperCase()", "core"],
+        ["n.toLocaleString();", ".toLocaleString()", "service"],
+      ] as const
+    ).map(([code, what, layer]) => ({
+      code,
+      filename: `/project/src/${layer}/foo.ts`,
+      errors: [
+        { messageId: "stringConstruction" as const, data: { what, layer } },
+      ],
+    })),
+
     // --- adapter: impure / environment-specific ---
     {
       code: `import.meta.env.VITE_KEY;`,

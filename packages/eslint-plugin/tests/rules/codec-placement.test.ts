@@ -47,9 +47,9 @@ ruleTester.run("codec-placement", rule, {
       code: `const parseResult = run(); interface X { decodeCount: number }`,
       filename: "/project/src/core/foo.ts",
     },
-    // .display() and format* are human-readable output, not codecs
+    // Display formatters are one-way output, not codecs
     {
-      code: `const item = { display: () => "x", formatLabel: () => "y" };`,
+      code: `const f = { formatLabel: (l: Label) => l, displayName: (n: Name) => n };`,
       filename: "/project/src/core/item.ts",
     },
     // Tests and non-layer files are not checked

@@ -17,6 +17,7 @@ import {
   isNodeBuiltinImport,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
+  STRING_CONSTRUCTION_METHODS,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
@@ -38,6 +39,7 @@ type MessageId =
   | "ioGlobal"
   | "schemaBoundary"
   | "encodedMethod"
+  | "stringConstruction"
   | "adapterImpure"
   | "adapterNodeBuiltin"
   | "adapterAmbientLocale";
@@ -62,6 +64,8 @@ export default createRule<[Options], MessageId>({
         "Schema.{{method}}() crosses the canonical/encoded boundary. Only allowed in adapter/infra. Current layer: '{{layer}}'.",
       encodedMethod:
         "'.{{method}}()' interprets encoded representation. Not allowed in '{{layer}}'. Encoded interpretation belongs in adapter.",
+      stringConstruction:
+        "{{what}} builds a string in '{{layer}}'. Strings are encoded or display representations; produce them in adapter (codecs and display formatters).",
       adapterImpure:
         "'{{name}}' is IO, environment-specific or non-deterministic. adapter is a pure codec shared by server and client. Move this to infra or ui/hooks.",
       adapterNodeBuiltin:
@@ -332,6 +336,29 @@ export default createRule<[Options], MessageId>({
               }
             },
 
+            // `${a}` interpolation (plain string literals and template types are fine)
+            TemplateLiteral(node: TSESTree.TemplateLiteral): void {
+              if (node.expressions.length === 0) return;
+              context.report({
+                node,
+                messageId: "stringConstruction",
+                data: { what: "Template literal interpolation", layer },
+              });
+            },
+            // "a" + b, s += "x" (string-ness is only known when one side is a string literal)
+            "BinaryExpression[operator='+'], AssignmentExpression[operator='+=']"(
+              node: TSESTree.BinaryExpression | TSESTree.AssignmentExpression,
+            ): void {
+              if (!isStringLiteral(node.left) && !isStringLiteral(node.right)) {
+                return;
+              }
+              context.report({
+                node,
+                messageId: "stringConstruction",
+                data: { what: "String concatenation", layer },
+              });
+            },
+
             // Schema boundary + string interpretation methods
             CallExpression(node: TSESTree.CallExpression): void {
               if (
@@ -352,8 +379,14 @@ export default createRule<[Options], MessageId>({
                 return;
               }
 
-              // toString is allowed (logging, debugging)
-              if (method === "toString") return;
+              if (STRING_CONSTRUCTION_METHODS.has(method)) {
+                context.report({
+                  node,
+                  messageId: "stringConstruction",
+                  data: { what: `.${method}()`, layer },
+                });
+                return;
+              }
 
               if (STRING_INTERPRETATION_METHODS.has(method)) {
                 context.report({
@@ -366,6 +399,14 @@ export default createRule<[Options], MessageId>({
           }
         : {}),
     };
+
+    function isStringLiteral(node: TSESTree.Node): boolean {
+      return (
+        (node.type === AST_NODE_TYPES.Literal &&
+          typeof node.value === "string") ||
+        node.type === AST_NODE_TYPES.TemplateLiteral
+      );
+    }
 
     function isInTypeContext(node: TSESTree.Node): boolean {
       let current: TSESTree.Node | undefined = node.parent;
