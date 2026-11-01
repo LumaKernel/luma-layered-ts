@@ -108,6 +108,20 @@ ruleTester.run("next", rule, {
       filename: "/project/src/app/page.test.tsx",
     },
 
+    // --- Next.js root conventions: constraints of the matching app/ layer ---
+    {
+      code: `import { ns } from "@/infra/ns"; path.split("/");`,
+      filename: "/project/src/proxy.ts",
+    },
+    {
+      code: `import { init } from "./infra/telemetry";`,
+      filename: "/project/src/instrumentation.ts",
+    },
+    {
+      code: `import { Heading } from "@/ui/components/heading";`,
+      filename: "/project/src/mdx-components.tsx",
+    },
+
     // --- Non-app files: not checked by this rule ---
     { code: `JSON.parse(data);`, filename: "/project/src/core/foo.ts" },
     {
@@ -121,6 +135,33 @@ ruleTester.run("next", rule, {
       filename: "/project/src/app/api/route.ts",
       errors: [{ messageId: "noDate" }],
     },
+    // --- Next.js root conventions ---
+    {
+      code: `import { useFoo } from "@/ui/hooks/foo";`,
+      filename: "/project/src/proxy.ts",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "app/api", toLayer: "ui/hooks" },
+        },
+      ],
+    },
+    {
+      code: `import { x } from "@/lib/x";`,
+      filename: "/project/src/middleware.ts",
+      errors: [{ messageId: "importNonLayer" }],
+    },
+    {
+      code: `import { kv } from "@/infra/kv";`,
+      filename: "/project/src/instrumentation-client.ts",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "app/pages", toLayer: "infra" },
+        },
+      ],
+    },
+
     // --- app/api: import violations ---
     {
       code: `import { useFoo } from "../../ui/hooks/bar";`,

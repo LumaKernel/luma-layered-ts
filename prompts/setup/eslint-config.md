@@ -10,6 +10,7 @@ import lumaLayeredTs from "@luma-layered-ts/eslint-plugin";
 
 export default tseslint.config(
   lumaLayeredTs.configs["recommended-next"],
+  lumaLayeredTs.configs["unsafe-dir"],
   {
     rules: {
       "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
@@ -26,6 +27,7 @@ import lumaLayeredTs from "@luma-layered-ts/eslint-plugin";
 
 export default tseslint.config(
   lumaLayeredTs.configs.recommended,
+  lumaLayeredTs.configs["unsafe-dir"],
   {
     rules: {
       "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }],
