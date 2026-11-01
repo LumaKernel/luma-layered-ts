@@ -14,7 +14,7 @@
 
 ## `strict-collection`
 
-型としての`ReadonlyMap`, `ReadonlySet`を全ファイルで禁止し、`@luma-layered-ts/types`の`StrictReadonlyMap`, `StrictReadonlySet`を使わせる。`ReadonlyMap#get`は`V | undefined`を返し、どちらも可変の`Map`/`Set`にアップキャストできる。`Map`/`Set`からの変換は`toStrictReadonlyMap`/`toStrictReadonlySet`。推論された型は対象外。
+型としての`Map`, `Set`, `ReadonlyMap`, `ReadonlySet`を全ファイルで禁止し、`@luma-layered-ts/types`の`StrictReadonlyMap`, `StrictReadonlySet`を使わせる。`Map`/`Set`は可変、`ReadonlyMap`/`ReadonlySet`は可変の型にアップキャストでき、`ReadonlyMap#get`は`V | undefined`を返す。変換は`toStrictReadonlyMap`/`toStrictReadonlySet`。`WeakMap`, `WeakSet`は対応する型がないため、型として書かず、変更するモジュール内の推論されたローカルに留める。`globalThis.`付きも対象。推論された型は対象外。
 
 ## `server`
 
