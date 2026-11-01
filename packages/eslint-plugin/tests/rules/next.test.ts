@@ -13,6 +13,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("next", rule, {
   valid: [
+    // app/pages decodes route params via adapter
+    {
+      code: `import { decodeParams } from "../adapter/params";`,
+      filename: "/project/src/app/page.tsx",
+    },
     // --- app/api: import matrix (can import core, service, adapter, infra) ---
     {
       code: `import { Foo } from "../../core/foo";`,
@@ -103,6 +108,20 @@ ruleTester.run("next", rule, {
       filename: "/project/src/app/page.test.tsx",
     },
 
+    // --- Next.js root conventions: constraints of the matching app/ layer ---
+    {
+      code: `import { ns } from "@/infra/ns"; path.split("/");`,
+      filename: "/project/src/proxy.ts",
+    },
+    {
+      code: `import { init } from "./infra/telemetry";`,
+      filename: "/project/src/instrumentation.ts",
+    },
+    {
+      code: `import { Heading } from "@/ui/components/heading";`,
+      filename: "/project/src/mdx-components.tsx",
+    },
+
     // --- Non-app files: not checked by this rule ---
     { code: `JSON.parse(data);`, filename: "/project/src/core/foo.ts" },
     {
@@ -111,6 +130,38 @@ ruleTester.run("next", rule, {
     },
   ],
   invalid: [
+    {
+      code: `new Date();`,
+      filename: "/project/src/app/api/route.ts",
+      errors: [{ messageId: "noDate" }],
+    },
+    // --- Next.js root conventions ---
+    {
+      code: `import { useFoo } from "@/ui/hooks/foo";`,
+      filename: "/project/src/proxy.ts",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "app/api", toLayer: "ui/hooks" },
+        },
+      ],
+    },
+    {
+      code: `import { x } from "@/lib/x";`,
+      filename: "/project/src/middleware.ts",
+      errors: [{ messageId: "importNonLayer" }],
+    },
+    {
+      code: `import { kv } from "@/infra/kv";`,
+      filename: "/project/src/instrumentation-client.ts",
+      errors: [
+        {
+          messageId: "importViolation",
+          data: { fromLayer: "app/pages", toLayer: "infra" },
+        },
+      ],
+    },
+
     // --- app/api: import violations ---
     {
       code: `import { useFoo } from "../../ui/hooks/bar";`,
@@ -144,16 +195,6 @@ ruleTester.run("next", rule, {
     },
 
     // --- app/pages: import violations ---
-    {
-      code: `import { Foo } from "../adapter/bar";`,
-      filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "importViolation",
-          data: { fromLayer: "app/pages", toLayer: "adapter" },
-        },
-      ],
-    },
     {
       code: `import { Foo } from "../infra/bar";`,
       filename: "/project/src/app/page.tsx",
@@ -223,12 +264,7 @@ ruleTester.run("next", rule, {
     {
       code: `new Date();`,
       filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "app/pages" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
 
     // --- app/pages: globalThis bypass banned ---

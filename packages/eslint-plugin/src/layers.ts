@@ -1,3 +1,6 @@
+import { builtinModules } from "node:module";
+import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
+
 export const LAYER_NAMES = [
   "core",
   "service",
@@ -19,7 +22,8 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   service: ["core"],
   adapter: ["core", "service"],
   infra: ["core", "service", "adapter"],
-  "ui/hooks": ["core", "service"],
+  // ui/hooks and app/pages decode client-side input (URL, storage, files, responses) via adapter
+  "ui/hooks": ["core", "service", "adapter"],
   "ui/components": ["core", "ui/hooks"],
   "ui/containers": ["core", "service", "ui/hooks", "ui/components"],
   "ui/pages": ["core", "service", "ui/hooks", "ui/components", "ui/containers"],
@@ -28,6 +32,7 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "app/pages": [
     "core",
     "service",
+    "adapter",
     "ui/hooks",
     "ui/components",
     "ui/containers",
@@ -41,7 +46,22 @@ export function isTestFile(filePath: string): boolean {
   return /\.(test|spec|stories)\.[^/]+$/.test(filePath);
 }
 
+// Next.js file conventions that must sit directly under src/ (outside app/).
+// They are wiring roots like app/, so they get the constraints of the matching app/ layer
+// instead of being exempted from layer checks.
+const NEXT_ROOT_CONVENTIONS: ReadonlyMap<string, LayerName> = new Map([
+  ["proxy", "app/api"],
+  ["middleware", "app/api"],
+  ["instrumentation", "app/api"],
+  ["instrumentation-client", "app/pages"],
+  ["mdx-components", "app/pages"],
+]);
+
 export function getLayerFromPath(filePath: string): LayerName | null {
+  const rootFile = filePath.match(/\/src\/([^/.]+)\.[^/]+$/);
+  const rootLayer = rootFile && NEXT_ROOT_CONVENTIONS.get(rootFile[1]);
+  if (rootLayer) return rootLayer;
+
   // Check app/api before app/pages (more specific first)
   if (filePath.match(/\/src\/app\/api\//)) return "app/api";
   if (filePath.match(/\/src\/app\//)) return "app/pages";
@@ -110,7 +130,6 @@ export const ENCODING_GLOBALS = new Set([
   "JSON",
   "String",
   "Number",
-  "Date",
   "Temporal",
   "globalThis",
   "Function",
@@ -175,3 +194,150 @@ export const STRING_INTERPRETATION_METHODS = new Set([
   "trimStart",
   "trimEnd",
 ]);
+
+// --- adapter purity ---
+// adapter is imported from both server (infra, app/api) and client (ui/hooks, app/pages),
+// so it must be a deterministic codec that runs in any environment.
+// Request/Response/Headers/FormData are Web-standard data types and stay allowed.
+
+// IO, environment-specific APIs, and global object access (which would bypass this list)
+export const ADAPTER_IMPURE_GLOBALS = new Set([
+  "fetch",
+  "process",
+  "performance",
+  "localStorage",
+  "sessionStorage",
+  "indexedDB",
+  "caches",
+  "document",
+  "navigator",
+  "location",
+  "history",
+  "XMLHttpRequest",
+  "WebSocket",
+  "EventSource",
+  "BroadcastChannel",
+  "Worker",
+  "crypto",
+  "setTimeout",
+  "setInterval",
+  "setImmediate",
+  "clearTimeout",
+  "clearInterval",
+  "queueMicrotask",
+  "requestAnimationFrame",
+  "Buffer",
+  "require",
+  "__dirname",
+  "__filename",
+  "globalThis",
+  "window",
+  "self",
+  "global",
+  "Function",
+  "eval",
+]);
+
+// Non-deterministic members: `Math.random`, `Temporal.Now`
+export const ADAPTER_IMPURE_MEMBERS: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
+  ["Math", new Set(["random"])],
+  ["Temporal", new Set(["Now"])],
+]);
+
+export function isNodeBuiltinImport(importPath: string): boolean {
+  return (
+    importPath.startsWith("node:") ||
+    builtinModules.includes(importPath.split("/")[0])
+  );
+}
+
+// Methods that silently use the runtime's locale or time zone.
+// Locale-aware formatting goes through Intl constructors with an explicit locale.
+export const ADAPTER_AMBIENT_LOCALE_METHODS = new Set([
+  "toLocaleString",
+  "toLocaleDateString",
+  "toLocaleTimeString",
+  "toLocaleUpperCase",
+  "toLocaleLowerCase",
+  "localeCompare",
+]);
+
+// Intl constructors whose first argument is the locale
+export const INTL_LOCALE_CONSTRUCTORS = new Set([
+  "DateTimeFormat",
+  "NumberFormat",
+  "Collator",
+  "PluralRules",
+  "RelativeTimeFormat",
+  "ListFormat",
+  "DisplayNames",
+  "Segmenter",
+  "DurationFormat",
+]);
+
+// --- String construction (core/service) ---
+// Inner layers hold canonical values only. Strings are encoded or display representations,
+// so they are produced in adapter (codecs and display formatters).
+export const STRING_CONSTRUCTION_METHODS = new Set([
+  "join",
+  "toString",
+  "toFixed",
+  "toPrecision",
+  "toExponential",
+  "toUpperCase",
+  "toLowerCase",
+  "toLocaleString",
+  "toLocaleDateString",
+  "toLocaleTimeString",
+  "toLocaleUpperCase",
+  "toLocaleLowerCase",
+]);
+
+// --- Date ---
+// Date is banned in every layer (mutable, local time by default, millisecond-only). Use Temporal.
+export const NO_DATE_MESSAGE =
+  "'Date' is not allowed in any layer. Use Temporal.";
+
+export function isDateReference(node: TSESTree.Identifier): boolean {
+  if (node.name !== "Date") return false;
+  const parent = node.parent;
+  // obj.Date, { Date: x }, class { Date() {} }, Ns.Date
+  if (
+    (parent.type === AST_NODE_TYPES.MemberExpression &&
+      parent.property === node &&
+      !parent.computed) ||
+    ((parent.type === AST_NODE_TYPES.Property ||
+      parent.type === AST_NODE_TYPES.MethodDefinition ||
+      parent.type === AST_NODE_TYPES.PropertyDefinition) &&
+      parent.key === node &&
+      !parent.computed &&
+      !(parent.type === AST_NODE_TYPES.Property && parent.shorthand)) ||
+    (parent.type === AST_NODE_TYPES.TSQualifiedName && parent.right === node)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+// --- adapter package allowlist ---
+// Third-party packages can do IO, so adapter imports only packages known to be pure.
+// Projects extend this with the server rule option `adapterAllowedPackages`.
+export const DEFAULT_ADAPTER_PACKAGES: readonly string[] = [
+  "effect",
+  "@luma-layered-ts/types",
+];
+
+// "effect/Schema" -> "effect", "@scope/pkg/sub" -> "@scope/pkg".
+// null for relative, absolute, `@/` alias and `#` subpath imports.
+export function packageName(importPath: string): string | null {
+  if (/^[./#]/.test(importPath) || isNonLayerAliasImport(importPath)) {
+    return null;
+  }
+  const segments = importPath.split("/");
+  return importPath.startsWith("@")
+    ? segments.slice(0, 2).join("/")
+    : segments[0];
+}

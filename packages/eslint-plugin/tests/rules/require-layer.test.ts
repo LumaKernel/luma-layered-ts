@@ -42,6 +42,15 @@ ruleTester.run("require-layer", rule, {
       code: `const x = 1;`,
       filename: "/project/src/app/game/page.tsx",
     },
+    // Next.js root conventions (recognized as app/ layers)
+    { code: `const x = 1;`, filename: "/project/src/proxy.ts" },
+    { code: `const x = 1;`, filename: "/project/src/middleware.ts" },
+    { code: `const x = 1;`, filename: "/project/src/instrumentation.ts" },
+    {
+      code: `const x = 1;`,
+      filename: "/project/src/instrumentation-client.ts",
+    },
+    { code: `const x = 1;`, filename: "/project/src/mdx-components.tsx" },
     // Composition root
     { code: `const x = 1;`, filename: "/project/src/main.ts" },
     { code: `const x = 1;`, filename: "/project/src/main.tsx" },
@@ -64,6 +73,12 @@ ruleTester.run("require-layer", rule, {
     { code: `const x = 1;`, filename: "/project/tests/e2e.test.ts" },
   ],
   invalid: [
+    // Next.js convention names are recognized only directly under src/
+    {
+      code: `const x = 1;`,
+      filename: "/project/src/lib/proxy.ts",
+      errors: [{ messageId: "noLayer" }],
+    },
     // Files under src/ but not in any layer
     {
       code: `const x = 1;`,

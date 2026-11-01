@@ -5,6 +5,7 @@
     "access": "public"
   },
   "description": "Type utilities for luma-layered-ts architecture",
+  "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
@@ -33,7 +34,8 @@
   "author": "Luma <world@luma.email>",
   "license": "MIT",
   "dependencies": {
-    "effect": "^3.0.0"
+    "effect": "^3.0.0",
+    "temporal-polyfill": "^1.0.6"
   },
   "peerDependencies": {
     "effect": "^3.0.0",

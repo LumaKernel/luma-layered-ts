@@ -58,6 +58,61 @@ ruleTester.run("server", rule, {
       filename: "/project/src/main.ts",
     },
 
+    // Non-global names that happen to be "Date"
+    {
+      code: `obj.Date; const o = { Date: 1 }; class A { Date() {} } let t: Ns.Date;`,
+      filename: "/project/src/infra/clock.ts",
+    },
+    // --- adapter: pure codec (deterministic, environment-independent) ---
+    // Package allowlist: effect, @luma-layered-ts/types, type-only imports, configured packages
+    ...[
+      `import { Schema } from "effect/Schema";`,
+      `import { PlainDate } from "@luma-layered-ts/types";`,
+      `import type { PrismaClient } from "@prisma/client";`,
+      `import { type Row } from "pg";`,
+      `import { codec } from "./codec";`,
+    ].map((code) => ({ code, filename: "/project/src/adapter/codec.ts" })),
+    {
+      code: `import { z } from "pure-lib/sub";`,
+      filename: "/project/src/adapter/codec.ts",
+      options: [{ adapterAllowedPackages: ["pure-lib"] }],
+    },
+    // Other layers are not restricted
+    {
+      code: `import { Pool } from "pg";`,
+      filename: "/project/src/infra/db.ts",
+    },
+    ...[
+      `new Intl.NumberFormat("ja-JP").format(n);`,
+      `new Intl.DateTimeFormat(locale, opts);`,
+      `new Intl.DateTimeFormat(locale, { ...base, hour: "2-digit" });`,
+      `new Intl.Collator(locale).compare(a, b);`,
+      `d.getUTCHours();`,
+      `Temporal.ZonedDateTime.from(s);`,
+    ].map((code) => ({ code, filename: "/project/src/adapter/format.ts" })),
+    // infra may use the runtime locale
+    { code: `d.toLocaleString();`, filename: "/project/src/infra/log.ts" },
+    {
+      code: `const f = (req: Request) => req.json();`,
+      filename: "/project/src/adapter/request.ts",
+    },
+    {
+      code: `new Response(JSON.stringify(body), { headers: new Headers() });`,
+      filename: "/project/src/adapter/response.ts",
+    },
+    {
+      code: `import { Schema } from "effect";`,
+      filename: "/project/src/adapter/codec.ts",
+    },
+    {
+      code: `import { fs } from "./fs";`,
+      filename: "/project/src/adapter/codec.ts",
+    },
+    {
+      code: `import { readFile } from "node:fs";`,
+      filename: "/project/src/infra/file.ts",
+    },
+
     // --- adapter/infra: everything allowed ---
     { code: `JSON.parse(data);`, filename: "/project/src/adapter/api.ts" },
     { code: `fetch(url);`, filename: "/project/src/infra/http.ts" },
@@ -70,23 +125,21 @@ ruleTester.run("server", rule, {
       filename: "/project/src/adapter/format.ts",
     },
     { code: `String(42);`, filename: "/project/src/infra/log.ts" },
-    { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
-    { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
       code: `globalThis["JSON"];`,
-      filename: "/project/src/adapter/parse.ts",
+      filename: "/project/src/infra/parse.ts",
     },
     {
       code: `Function("return this")();`,
-      filename: "/project/src/adapter/parse.ts",
+      filename: "/project/src/infra/parse.ts",
     },
     {
-      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      code: `new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo" }).format(ts);`,
       filename: "/project/src/adapter/format.ts",
     },
     {
       code: `performance.now();`,
-      filename: "/project/src/adapter/time.ts",
+      filename: "/project/src/infra/clock.ts",
     },
     {
       code: `performance.timeOrigin;`,
@@ -94,7 +147,7 @@ ruleTester.run("server", rule, {
     },
     {
       code: `Temporal.Now.instant();`,
-      filename: "/project/src/adapter/time.ts",
+      filename: "/project/src/infra/clock.ts",
     },
     {
       code: `Temporal.Instant.fromEpochMilliseconds(ts);`,
@@ -108,9 +161,18 @@ ruleTester.run("server", rule, {
     { code: `encodeURIComponent(s);`, filename: "/project/src/infra/url.ts" },
 
     // --- core/service: allowed operations ---
-    // toString for logging
-    { code: `value.toString();`, filename: "/project/src/service/foo.ts" },
-    { code: `value.toString();`, filename: "/project/src/core/foo.ts" },
+    // String literals as constants and tags, template literals without interpolation
+    {
+      code: `const tag = "Black"; const t = \`fixed\`; type K = \`k_\${string}\`;`,
+      filename: "/project/src/core/foo.ts",
+    },
+    // + without a string literal operand is assumed numeric
+    { code: `const n = a + b; n += 1;`, filename: "/project/src/core/foo.ts" },
+    // Strings are built in adapter
+    {
+      code: `const s = \`\${a}-\${b}\`; arr.join(",");`,
+      filename: "/project/src/adapter/foo.ts",
+    },
     // unrelated methods
     { code: `arr.map(fn);`, filename: "/project/src/core/foo.ts" },
     { code: `effect.pipe(fn);`, filename: "/project/src/service/bar.ts" },
@@ -146,6 +208,115 @@ ruleTester.run("server", rule, {
     },
   ],
   invalid: [
+    // --- core/service: string construction ---
+    ...(
+      [
+        ["const s = `${a}-${b}`;", "Template literal interpolation", "core"],
+        ["const s = tag`${a}`;", "Template literal interpolation", "core"],
+        ['const s = "#" + id;', "String concatenation", "core"],
+        ["const s = id + `x`;", "String concatenation", "service"],
+        ['s += "x";', "String concatenation", "core"],
+        ['parts.join("/");', ".join()", "core"],
+        ["value.toString();", ".toString()", "core"],
+        ["value.toString();", ".toString()", "service"],
+        ["n.toFixed(2);", ".toFixed()", "core"],
+        ["s.toUpperCase();", ".toUpperCase()", "core"],
+        ["n.toLocaleString();", ".toLocaleString()", "service"],
+      ] as const
+    ).map(([code, what, layer]) => ({
+      code,
+      filename: `/project/src/${layer}/foo.ts`,
+      errors: [
+        { messageId: "stringConstruction" as const, data: { what, layer } },
+      ],
+    })),
+
+    // --- Date: banned in every layer (Temporal only) ---
+    ...[
+      "/project/src/core/foo.ts",
+      "/project/src/service/foo.ts",
+      "/project/src/adapter/time.ts",
+      "/project/src/infra/clock.ts",
+    ].flatMap((filename) =>
+      [
+        `new Date(iso);`,
+        `Date.now();`,
+        `Date.UTC(2024, 0, 1);`,
+        `const f = (d: Date) => d;`,
+        `const D = Date;`,
+      ].map((code) => ({
+        code,
+        filename,
+        errors: [{ messageId: "noDate" as const }],
+      })),
+    ),
+
+    // --- adapter: impure / environment-specific ---
+    ...[
+      ['import { Pool } from "pg";', "pg"],
+      ['import axios from "axios";', "axios"],
+      ['import { HttpClient } from "@effect/platform";', "@effect/platform"],
+      ['import "side-effect-lib";', "side-effect-lib"],
+      ['const m = await import("@scope/lib/deep");', "@scope/lib"],
+    ].map(([code, name]) => ({
+      code,
+      filename: "/project/src/adapter/codec.ts",
+      errors: [
+        { messageId: "adapterPackageNotAllowed" as const, data: { name } },
+      ],
+    })),
+    {
+      code: `import.meta.env.VITE_KEY;`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [{ messageId: "adapterImpure", data: { name: "import.meta" } }],
+    },
+    ...[
+      ["d.toLocaleString();", ".toLocaleString()"],
+      ['d.toLocaleDateString("ja-JP");', ".toLocaleDateString()"],
+      ["s.toLocaleUpperCase();", ".toLocaleUpperCase()"],
+      ["a.localeCompare(b);", ".localeCompare()"],
+      ["new Intl.NumberFormat();", "Intl.NumberFormat"],
+      [
+        "Intl.DateTimeFormat().resolvedOptions().timeZone;",
+        "Intl.DateTimeFormat",
+      ],
+      ["new Intl.Collator(undefined);", "Intl.Collator"],
+      ["new Intl.PluralRules([]);", "Intl.PluralRules"],
+      ['new Intl.DateTimeFormat("ja-JP");', "Intl.DateTimeFormat"],
+      [
+        'new Intl.DateTimeFormat("ja-JP", { hour: "2-digit" });',
+        "Intl.DateTimeFormat",
+      ],
+    ].map(([code, name]) => ({
+      code,
+      name: `adapter ambient locale: ${name}`,
+      filename: "/project/src/adapter/format.ts",
+      errors: [{ messageId: "adapterAmbientLocale" as const }],
+    })),
+    ...[
+      ["fetch(url);", "fetch"],
+      ["process.env.API_KEY;", "process"],
+      ["performance.now();", "performance"],
+      ["localStorage.getItem(k);", "localStorage"],
+      ["setTimeout(f, 0);", "setTimeout"],
+      ["crypto.randomUUID();", "crypto"],
+      ['globalThis["fetch"];', "globalThis"],
+      ['Function("return this")();', "Function"],
+      ["Math.random();", "Math.random"],
+      ["Temporal.Now.instant();", "Temporal.Now"],
+    ].map(([code, name]) => ({
+      code,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [{ messageId: "adapterImpure" as const, data: { name } }],
+    })),
+    ...["node:fs", "fs", "fs/promises", "path"].map((importPath) => ({
+      code: `import x from "${importPath}";`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [
+        { messageId: "adapterNodeBuiltin" as const, data: { importPath } },
+      ],
+    })),
+
     // --- Import violations ---
     {
       code: `import { Foo } from "../service/bar";`,
@@ -348,22 +519,7 @@ ruleTester.run("server", rule, {
     {
       code: `new Date();`,
       filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "core" },
-        },
-      ],
-    },
-    {
-      code: `Date.now();`,
-      filename: "/project/src/service/foo.ts",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "service" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
 
     // --- Intl in inner layers ---
