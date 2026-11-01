@@ -4,6 +4,7 @@ import { rules, configs } from "../src/index";
 describe("index exports", () => {
   it("exports all rules", () => {
     expect(Object.keys(rules).sort()).toEqual([
+      "codec-placement",
       "next",
       "react",
       "require-layer",
@@ -14,6 +15,7 @@ describe("index exports", () => {
   it("recommended config includes base rules", () => {
     const recommendedRules = Object.keys(configs.recommended.rules).sort();
     expect(recommendedRules).toEqual([
+      "@luma-layered-ts/codec-placement",
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
       "@luma-layered-ts/server",
@@ -23,6 +25,7 @@ describe("index exports", () => {
   it("recommended-next config includes next rule", () => {
     const nextRules = Object.keys(configs["recommended-next"].rules).sort();
     expect(nextRules).toEqual([
+      "@luma-layered-ts/codec-placement",
       "@luma-layered-ts/next",
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
