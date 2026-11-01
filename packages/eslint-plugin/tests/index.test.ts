@@ -8,6 +8,7 @@ describe("index exports", () => {
       "react",
       "require-layer",
       "server",
+      "strict-collection",
     ]);
   });
 
@@ -17,6 +18,7 @@ describe("index exports", () => {
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
       "@luma-layered-ts/server",
+      "@luma-layered-ts/strict-collection",
     ]);
   });
 
@@ -27,6 +29,7 @@ describe("index exports", () => {
       "@luma-layered-ts/react",
       "@luma-layered-ts/require-layer",
       "@luma-layered-ts/server",
+      "@luma-layered-ts/strict-collection",
     ]);
   });
 });

@@ -1,6 +1,6 @@
 # ESLintルール
 
-`@luma-layered-ts/eslint-plugin`は4つのルールを提供する。
+`@luma-layered-ts/eslint-plugin`は5つのルールを提供する。
 
 ## `require-layer`
 
@@ -11,6 +11,10 @@
 例外:
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
 - テストファイル(`.test.ts`, `.spec.ts`)とStorybook(`.stories.tsx`)は全ルールから除外。フィクスチャ作成のためにレイヤ横断importが必要
+
+## `strict-collection`
+
+型としての`ReadonlyMap`, `ReadonlySet`を全ファイルで禁止し、`@luma-layered-ts/types`の`StrictReadonlyMap`, `StrictReadonlySet`を使わせる。`ReadonlyMap#get`は`V | undefined`を返し、どちらも可変の`Map`/`Set`にアップキャストできる。`Map`/`Set`からの変換は`toStrictReadonlyMap`/`toStrictReadonlySet`。推論された型は対象外。
 
 ## `server`
 
