@@ -1,6 +1,6 @@
 # ESLintルール
 
-`@luma-layered-ts/eslint-plugin`は4つのルールを提供する。
+`@luma-layered-ts/eslint-plugin`は5つのルールを提供する。
 
 ## `require-layer`
 
@@ -11,6 +11,12 @@
 例外:
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
 - テストファイル(`.test.ts`, `.spec.ts`)とStorybook(`.stories.tsx`)は全ルールから除外。フィクスチャ作成のためにレイヤ横断importが必要
+
+## `codec-placement`
+
+`serialize*`, `deserialize*`, `encode*`, `decode*`, `parse*`という名前の関数(関数宣言、関数を代入する変数、メソッド、関数型のinterface/typeメンバ)をadapter/infra以外で定義することを禁止する。prefixの直後は大文字・数字・`_`・終端のみ一致(`parsed`, `decoder`は対象外)。テストファイルは対象外。
+
+呼び出し側は検査しない。codecをadapterに置けば、どの層から呼べるかはインポート行列が決める。
 
 ## `server`
 
