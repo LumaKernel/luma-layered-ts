@@ -10,6 +10,8 @@ import {
   ENCODING_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
+  isDateReference,
+  NO_DATE_MESSAGE,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
@@ -19,6 +21,7 @@ const defaultOptions: Options = {};
 const NEXT_LAYERS = new Set<LayerName>(["app/api", "app/pages"]);
 
 type MessageId =
+  | "noDate"
   | "importViolation"
   | "importNonLayer"
   | "encodedGlobal"
@@ -34,6 +37,7 @@ export default createRule<[Options], MessageId>({
         "Enforce layered architecture for Next.js app router files. app/api/ has server wiring root constraints (import matrix only). app/ pages/layouts have ui/pages-equivalent constraints.",
     },
     messages: {
+      noDate: NO_DATE_MESSAGE,
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
       importNonLayer:
         "Import '{{importPath}}' does not resolve to a recognized layer. Move the target into a layer directory.",
@@ -80,6 +84,10 @@ export default createRule<[Options], MessageId>({
     // app/api: import matrix only (server-side wiring root)
     if (isApiRoute) {
       return {
+        "Identifier[name='Date']"(node: TSESTree.Identifier): void {
+          if (isDateReference(node))
+            context.report({ node, messageId: "noDate" });
+        },
         ImportDeclaration(node: TSESTree.ImportDeclaration): void {
           checkImport(node.source.value, node);
         },
@@ -106,6 +114,10 @@ export default createRule<[Options], MessageId>({
 
     // app/pages: same constraints as ui/pages
     return {
+      "Identifier[name='Date']"(node: TSESTree.Identifier): void {
+        if (isDateReference(node))
+          context.report({ node, messageId: "noDate" });
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         checkImport(node.source.value, node);
       },

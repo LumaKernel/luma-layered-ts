@@ -7,7 +7,7 @@ inner layerの型はcanonical representation。JSON表現はencoded boundary rep
 | Canonical (inner layers) | Encoded (boundary) | 備考 |
 |---|---|---|
 | `Option<T>` | `T \| null` / `T \| undefined` | inner layerでnull/undefinedを直接扱わない |
-| `DateTime.Utc` | ISO 8601 string | `Date`はencoding globals禁止で検出 |
+| `DateTime.Utc` | ISO 8601 string | `Date`は全レイヤで禁止。encoded側との変換はadapterで`Temporal`を使う |
 | `BigDecimal` | `string` (numeric) | 精度を落とさない |
 | `Brand<"UserId">` | `string` | |
 | `ReadonlyArray<T>` | `T[]` | inner layerではimmutable必須 |
@@ -20,5 +20,7 @@ inner layerの型はcanonical representation。JSON表現はencoded boundary rep
 ## Schema
 
 `src/core/`で定義。core内では`.Type`(canonical)のみ使用。encode/decode(`.Encoded`変換)は`src/adapter/`のみ。
+
+decodeし直す可能性のある文字列表現(保存・送信・URL・キー・テキスト記法を含む)はencoded representation。生成と解釈は対にしてadapterに置く。片方だけをcoreに置かない。人間向けの表示テキスト(一方向の出力)もadapterの書式化関数で生成する。core/serviceは文字列を生成しない。
 
 Zodやio-tsはencoded側しか表現できない。Effect Schemaの双方向変換がこの分離を可能にする。

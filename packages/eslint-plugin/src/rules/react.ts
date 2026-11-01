@@ -10,6 +10,8 @@ import {
   ENCODING_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
+  isDateReference,
+  NO_DATE_MESSAGE,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
@@ -23,10 +25,11 @@ const UI_LAYERS = new Set<LayerName>([
   "ui/pages",
 ]);
 
-// components can call .display(), .trim(), .toString() — these don't interpret structure
-const COMPONENT_ALLOWED_METHODS = new Set(["display", "trim", "toString"]);
+// components can call .trim(), .toString() — these don't interpret structure
+const COMPONENT_ALLOWED_METHODS = new Set(["trim", "toString"]);
 
 type MessageId =
+  | "noDate"
   | "importViolation"
   | "importNonLayer"
   | "encodedGlobal"
@@ -43,6 +46,7 @@ export default createRule<[Options], MessageId>({
         "Enforce layered architecture for React UI layers (ui/hooks, ui/components, ui/containers, ui/pages). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
     },
     messages: {
+      noDate: NO_DATE_MESSAGE,
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
       importNonLayer:
         "Import '{{importPath}}' does not resolve to a recognized layer. Move the target into a layer directory.",
@@ -53,7 +57,7 @@ export default createRule<[Options], MessageId>({
       encodedMethod:
         "'.{{method}}()' interprets encoded representation. Not allowed in '{{layer}}'.",
       componentParseMethod:
-        "'.{{method}}()' interprets string structure. Components may only call .display() and .trim().",
+        "'.{{method}}()' interprets string structure. Components may only call .trim().",
     },
     schema: [],
   },
@@ -90,6 +94,10 @@ export default createRule<[Options], MessageId>({
 
     return {
       // --- Import checks ---
+      "Identifier[name='Date']"(node: TSESTree.Identifier): void {
+        if (isDateReference(node))
+          context.report({ node, messageId: "noDate" });
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         checkImport(node.source.value, node);
       },
@@ -159,7 +167,7 @@ export default createRule<[Options], MessageId>({
         if (method === "toString") return;
 
         if (isComponent) {
-          // Components: display/trim allowed, parse methods forbidden
+          // Components: trim allowed, parse methods forbidden
           if (COMPONENT_ALLOWED_METHODS.has(method)) return;
           if (STRING_INTERPRETATION_METHODS.has(method)) {
             context.report({
