@@ -58,6 +58,30 @@ ruleTester.run("server", rule, {
       filename: "/project/src/main.ts",
     },
 
+    // --- adapter: pure codec (deterministic, environment-independent) ---
+    { code: `new Date(iso);`, filename: "/project/src/adapter/time.ts" },
+    { code: `Date.parse(iso);`, filename: "/project/src/adapter/time.ts" },
+    {
+      code: `const f = (req: Request) => req.json();`,
+      filename: "/project/src/adapter/request.ts",
+    },
+    {
+      code: `new Response(JSON.stringify(body), { headers: new Headers() });`,
+      filename: "/project/src/adapter/response.ts",
+    },
+    {
+      code: `import { Schema } from "effect";`,
+      filename: "/project/src/adapter/codec.ts",
+    },
+    {
+      code: `import { fs } from "./fs";`,
+      filename: "/project/src/adapter/codec.ts",
+    },
+    {
+      code: `import { readFile } from "node:fs";`,
+      filename: "/project/src/infra/file.ts",
+    },
+
     // --- adapter/infra: everything allowed ---
     { code: `JSON.parse(data);`, filename: "/project/src/adapter/api.ts" },
     { code: `fetch(url);`, filename: "/project/src/infra/http.ts" },
@@ -70,15 +94,15 @@ ruleTester.run("server", rule, {
       filename: "/project/src/adapter/format.ts",
     },
     { code: `String(42);`, filename: "/project/src/infra/log.ts" },
-    { code: `new Date();`, filename: "/project/src/adapter/time.ts" },
+    { code: `new Date();`, filename: "/project/src/infra/clock.ts" },
     { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
       code: `globalThis["JSON"];`,
-      filename: "/project/src/adapter/parse.ts",
+      filename: "/project/src/infra/parse.ts",
     },
     {
       code: `Function("return this")();`,
-      filename: "/project/src/adapter/parse.ts",
+      filename: "/project/src/infra/parse.ts",
     },
     {
       code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
@@ -86,7 +110,7 @@ ruleTester.run("server", rule, {
     },
     {
       code: `performance.now();`,
-      filename: "/project/src/adapter/time.ts",
+      filename: "/project/src/infra/clock.ts",
     },
     {
       code: `performance.timeOrigin;`,
@@ -94,7 +118,7 @@ ruleTester.run("server", rule, {
     },
     {
       code: `Temporal.Now.instant();`,
-      filename: "/project/src/adapter/time.ts",
+      filename: "/project/src/infra/clock.ts",
     },
     {
       code: `Temporal.Instant.fromEpochMilliseconds(ts);`,
@@ -146,6 +170,34 @@ ruleTester.run("server", rule, {
     },
   ],
   invalid: [
+    // --- adapter: impure / environment-specific ---
+    ...[
+      ["fetch(url);", "fetch"],
+      ["process.env.API_KEY;", "process"],
+      ["performance.now();", "performance"],
+      ["localStorage.getItem(k);", "localStorage"],
+      ["setTimeout(f, 0);", "setTimeout"],
+      ["crypto.randomUUID();", "crypto"],
+      ['globalThis["fetch"];', "globalThis"],
+      ['Function("return this")();', "Function"],
+      ["Date.now();", "Date.now"],
+      ["Math.random();", "Math.random"],
+      ["Temporal.Now.instant();", "Temporal.Now"],
+      ["new Date();", "new Date()"],
+      ["Date();", "Date()"],
+    ].map(([code, name]) => ({
+      code,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [{ messageId: "adapterImpure" as const, data: { name } }],
+    })),
+    ...["node:fs", "fs", "fs/promises", "path"].map((importPath) => ({
+      code: `import x from "${importPath}";`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [
+        { messageId: "adapterNodeBuiltin" as const, data: { importPath } },
+      ],
+    })),
+
     // --- Import violations ---
     {
       code: `import { Foo } from "../service/bar";`,

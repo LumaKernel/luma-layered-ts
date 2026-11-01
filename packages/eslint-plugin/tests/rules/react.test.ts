@@ -13,6 +13,15 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("react", rule, {
   valid: [
+    // hooks decode client-side input via adapter
+    {
+      code: `import { decodeRecord } from "../../adapter/record";`,
+      filename: "/project/src/ui/hooks/use-record-file.ts",
+    },
+    {
+      code: `import { decodeRecord } from "@/adapter/record";`,
+      filename: "/project/src/ui/hooks/use-record-file.ts",
+    },
     // --- Imports ---
     // ui/components imports ui/hooks
     {
@@ -119,16 +128,6 @@ ruleTester.run("react", rule, {
   ],
   invalid: [
     // --- Import violations ---
-    {
-      code: `import { Foo } from "../../adapter/bar";`,
-      filename: "/project/src/ui/hooks/foo.ts",
-      errors: [
-        {
-          messageId: "importViolation",
-          data: { fromLayer: "ui/hooks", toLayer: "adapter" },
-        },
-      ],
-    },
     {
       code: `import { Foo } from "../../service/bar";`,
       filename: "/project/src/ui/components/foo.tsx",

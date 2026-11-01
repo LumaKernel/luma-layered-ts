@@ -1,3 +1,5 @@
+import { builtinModules } from "node:module";
+
 export const LAYER_NAMES = [
   "core",
   "service",
@@ -19,7 +21,8 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   service: ["core"],
   adapter: ["core", "service"],
   infra: ["core", "service", "adapter"],
-  "ui/hooks": ["core", "service"],
+  // ui/hooks and app/pages decode client-side input (URL, storage, files, responses) via adapter
+  "ui/hooks": ["core", "service", "adapter"],
   "ui/components": ["core", "ui/hooks"],
   "ui/containers": ["core", "service", "ui/hooks", "ui/components"],
   "ui/pages": ["core", "service", "ui/hooks", "ui/components", "ui/containers"],
@@ -28,6 +31,7 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "app/pages": [
     "core",
     "service",
+    "adapter",
     "ui/hooks",
     "ui/components",
     "ui/containers",
@@ -175,3 +179,63 @@ export const STRING_INTERPRETATION_METHODS = new Set([
   "trimStart",
   "trimEnd",
 ]);
+
+// --- adapter purity ---
+// adapter is imported from both server (infra, app/api) and client (ui/hooks, app/pages),
+// so it must be a deterministic codec that runs in any environment.
+// Request/Response/Headers/FormData are Web-standard data types and stay allowed.
+
+// IO, environment-specific APIs, and global object access (which would bypass this list)
+export const ADAPTER_IMPURE_GLOBALS = new Set([
+  "fetch",
+  "process",
+  "performance",
+  "localStorage",
+  "sessionStorage",
+  "indexedDB",
+  "caches",
+  "document",
+  "navigator",
+  "location",
+  "history",
+  "XMLHttpRequest",
+  "WebSocket",
+  "EventSource",
+  "BroadcastChannel",
+  "Worker",
+  "crypto",
+  "setTimeout",
+  "setInterval",
+  "setImmediate",
+  "clearTimeout",
+  "clearInterval",
+  "queueMicrotask",
+  "requestAnimationFrame",
+  "Buffer",
+  "require",
+  "__dirname",
+  "__filename",
+  "globalThis",
+  "window",
+  "self",
+  "global",
+  "Function",
+  "eval",
+]);
+
+// Non-deterministic members: `Date.now`, `Math.random`, `Temporal.Now`
+export const ADAPTER_IMPURE_MEMBERS: ReadonlyMap<
+  string,
+  ReadonlySet<string>
+> = new Map([
+  ["Date", new Set(["now"])],
+  ["Math", new Set(["random"])],
+  ["Temporal", new Set(["Now"])],
+]);
+
+export function isNodeBuiltinImport(importPath: string): boolean {
+  return (
+    importPath.startsWith("node:") ||
+    builtinModules.includes(importPath.split("/")[0])
+  );
+}

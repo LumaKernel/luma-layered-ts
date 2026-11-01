@@ -24,7 +24,15 @@
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
 - `toString()`は許容(logging)
 
-adapter/infraはインポート行列のみ。encoded representation操作はここで行う。
+adapter/infraはencoded representation操作を行う層。encoding globals・Schema boundary・string解釈は許可。
+
+adapterはサーバー(infra, app/api)とクライアント(ui/hooks, app/pages)の両方からimportされるため、決定的で実行環境に依存しない純粋な変換に限る:
+- IO・環境依存のglobals禁止: `fetch`, `process`, `performance`, `localStorage`, `document`, `navigator`, `crypto`, タイマー, `Buffer`, `require`等。迂回防止で`globalThis`, `window`, `self`, `global`, `Function`, `eval`も禁止
+- 非決定的な値禁止: `Date.now`, `Math.random`, `Temporal.Now`, 引数なしの`new Date()`, `Date()`
+- Node.js組み込みモジュールのimport禁止(`node:*`, `fs`, `path`等)
+- `Request`, `Response`, `Headers`, `FormData`はWeb標準のデータ型として許可
+
+infraはインポート行列のみ。
 
 全レイヤ共通: `@/`エイリアスimportがレイヤディレクトリに解決されない場合は`importNonLayer`エラー。`@/engines/foo`や`@/lib/bar`のようなレイヤ外パスへのimportを検出する。
 
@@ -55,7 +63,7 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 | サブレイヤ | パス | import可能 | 制約 |
 |---|---|---|---|
 | `app/api` | `src/app/api/**` | core, service, adapter, infra | インポート行列のみ(サーバー側wiring root) |
-| `app/pages` | `src/app/**`(api以外) | core, service, ui/hooks, ui/components, ui/containers, ui/pages | encoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
+| `app/pages` | `src/app/**`(api以外) | core, service, adapter, ui/hooks, ui/components, ui/containers, ui/pages | adapterの関数でroute params等をdecodeする。自身はencoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
 
 `app/api`のroute handlerは薄いwiring rootとして、実処理はadapter/infra/serviceに委譲する。
 `app/pages`のpage/layoutは薄いwiring rootとして、実UIは`ui/pages`や`ui/components`に委譲する。

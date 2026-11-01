@@ -6,9 +6,9 @@
 |---|---|---|
 | `src/core/` | 自身のみ | Schema定義のみ。decode/encode禁止。null/undefined禁止(Optionを使う)。副作用なし。 |
 | `src/service/` | core | Effect Service/Layer定義。domain型のみ受け渡し。生JSON・生string禁止。 |
-| `src/adapter/` | core, service | 境界層。Schema decode/encode、JSON操作、string解釈はここだけで許可。 |
+| `src/adapter/` | core, service | 境界層。Schema decode/encode、JSON操作、string解釈はここ(とinfra)だけで許可。決定的で実行環境に依存しない純粋な変換に限り、サーバーとクライアントの両方から使う。IO・時刻・乱数・Node.js組み込みは禁止。 |
 | `src/infra/` | core, service, adapter | 具象IO実装。DB、HTTP、ファイルシステム。 |
-| `src/ui/hooks/` | core, service | UIロジック。JSX禁止。string操作禁止。 |
+| `src/ui/hooks/` | core, service, adapter | UIロジック。JSX禁止。string操作禁止。クライアント側の入力(URL、storage、ファイル、レスポンス)はadapterの関数でdecodeする。 |
 | `src/ui/components/` | core, ui/hooks | 描画専用。`.display()`呼び出し可。string解釈(split/match等)は禁止。 |
 | `src/ui/containers/` | core, service, ui/hooks, ui/components | 合成+状態管理。encoding globals禁止。string解釈全禁止。 |
 | `src/ui/pages/` | core, service, ui/hooks, ui/components, ui/containers | ページ合成。直接のstring抽出禁止。 |
@@ -20,7 +20,7 @@
 | ディレクトリ | import可 | 特徴 |
 |---|---|---|
 | `src/app/api/**` | core, service, adapter, infra | サーバー側wiring root。実処理はadapter/infra/serviceに委譲。 |
-| `src/app/**`(api以外) | core, service, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。 |
+| `src/app/**`(api以外) | core, service, adapter, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。 |
 
 app/配下は薄いエントリーポイント。ロジックやUI実装を直接書かない。
 
@@ -46,10 +46,10 @@ core           o     -    -     -      -      -     -     -
 service        o     o    -     -      -      -     -     -
 adapter        o     o    o     -      -      -     -     -
 infra          o     o    o     o      -      -     -     -
-ui/hooks       o     o    -     -      o      -     -     -
+ui/hooks       o     o    o     -      o      -     -     -
 ui/components  o     -    -     -      o      o     -     -
 ui/containers  o     o    -     -      o      o     o     -
 ui/pages       o     o    -     -      o      o     o     o
 app/api        o     o    o     o      -      -     -     -
-app/pages      o     o    -     -      o      o     o     o
+app/pages      o     o    o     -      o      o     o     o
 ```

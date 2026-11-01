@@ -13,6 +13,11 @@ const ruleTester = new RuleTester({
 
 ruleTester.run("next", rule, {
   valid: [
+    // app/pages decodes route params via adapter
+    {
+      code: `import { decodeParams } from "../adapter/params";`,
+      filename: "/project/src/app/page.tsx",
+    },
     // --- app/api: import matrix (can import core, service, adapter, infra) ---
     {
       code: `import { Foo } from "../../core/foo";`,
@@ -144,16 +149,6 @@ ruleTester.run("next", rule, {
     },
 
     // --- app/pages: import violations ---
-    {
-      code: `import { Foo } from "../adapter/bar";`,
-      filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "importViolation",
-          data: { fromLayer: "app/pages", toLayer: "adapter" },
-        },
-      ],
-    },
     {
       code: `import { Foo } from "../infra/bar";`,
       filename: "/project/src/app/page.tsx",

@@ -9,6 +9,9 @@ import {
   resolveImportPath,
   ENCODING_GLOBALS,
   IO_GLOBALS,
+  ADAPTER_IMPURE_GLOBALS,
+  ADAPTER_IMPURE_MEMBERS,
+  isNodeBuiltinImport,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
 } from "../layers.js";
@@ -31,7 +34,9 @@ type MessageId =
   | "encodedGlobal"
   | "ioGlobal"
   | "schemaBoundary"
-  | "encodedMethod";
+  | "encodedMethod"
+  | "adapterImpure"
+  | "adapterNodeBuiltin";
 
 export default createRule<[Options], MessageId>({
   name: "server",
@@ -53,6 +58,10 @@ export default createRule<[Options], MessageId>({
         "Schema.{{method}}() crosses the canonical/encoded boundary. Only allowed in adapter/infra. Current layer: '{{layer}}'.",
       encodedMethod:
         "'.{{method}}()' interprets encoded representation. Not allowed in '{{layer}}'. Encoded interpretation belongs in adapter.",
+      adapterImpure:
+        "'{{name}}' is IO, environment-specific or non-deterministic. adapter is a pure codec shared by server and client. Move this to infra or ui/hooks.",
+      adapterNodeBuiltin:
+        "'{{importPath}}' is a Node.js built-in. adapter is a pure codec shared by server and client.",
     },
     schema: [],
   },
@@ -64,8 +73,17 @@ export default createRule<[Options], MessageId>({
     if (!layer || !SERVER_LAYERS.has(layer)) return {};
 
     const isInner = INNER_LAYERS.has(layer);
+    const isAdapter = layer === "adapter";
 
     function checkImport(importPath: string, node: TSESTree.Node): void {
+      if (isAdapter && isNodeBuiltinImport(importPath)) {
+        context.report({
+          node,
+          messageId: "adapterNodeBuiltin",
+          data: { importPath },
+        });
+        return;
+      }
       const resolved = resolveImportPath(importPath, filePath);
       const toLayer = getLayerFromImport(resolved);
       if (!toLayer) {
@@ -110,6 +128,64 @@ export default createRule<[Options], MessageId>({
           checkImport(node.expression.value, node);
         }
       },
+
+      // --- adapter purity ---
+      ...(isAdapter
+        ? {
+            Identifier(node: TSESTree.Identifier): void {
+              if (!ADAPTER_IMPURE_GLOBALS.has(node.name)) return;
+              if (
+                node.parent?.type === AST_NODE_TYPES.MemberExpression &&
+                node.parent.property === node &&
+                !node.parent.computed
+              ) {
+                return;
+              }
+              if (isInTypeContext(node)) return;
+              context.report({
+                node,
+                messageId: "adapterImpure",
+                data: { name: node.name },
+              });
+            },
+            MemberExpression(node: TSESTree.MemberExpression): void {
+              if (
+                node.object.type !== AST_NODE_TYPES.Identifier ||
+                node.property.type !== AST_NODE_TYPES.Identifier ||
+                node.computed
+              ) {
+                return;
+              }
+              const name = `${node.object.name}.${node.property.name}`;
+              if (
+                ADAPTER_IMPURE_MEMBERS.get(node.object.name)?.has(
+                  node.property.name,
+                )
+              ) {
+                context.report({
+                  node,
+                  messageId: "adapterImpure",
+                  data: { name },
+                });
+              }
+            },
+            // `new Date()` / `Date()` read the clock
+            "NewExpression[callee.name='Date'][arguments.length=0], CallExpression[callee.name='Date']"(
+              node: TSESTree.NewExpression | TSESTree.CallExpression,
+            ): void {
+              context.report({
+                node,
+                messageId: "adapterImpure",
+                data: {
+                  name:
+                    node.type === AST_NODE_TYPES.NewExpression
+                      ? "new Date()"
+                      : "Date()",
+                },
+              });
+            },
+          }
+        : {}),
 
       // --- Inner layer restrictions (core/service only) ---
       ...(isInner
