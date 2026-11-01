@@ -10,6 +10,8 @@ import {
   ENCODING_GLOBALS,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
+  isDateReference,
+  NO_DATE_MESSAGE,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
@@ -27,6 +29,7 @@ const UI_LAYERS = new Set<LayerName>([
 const COMPONENT_ALLOWED_METHODS = new Set(["display", "trim", "toString"]);
 
 type MessageId =
+  | "noDate"
   | "importViolation"
   | "importNonLayer"
   | "encodedGlobal"
@@ -43,6 +46,7 @@ export default createRule<[Options], MessageId>({
         "Enforce layered architecture for React UI layers (ui/hooks, ui/components, ui/containers, ui/pages). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
     },
     messages: {
+      noDate: NO_DATE_MESSAGE,
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
       importNonLayer:
         "Import '{{importPath}}' does not resolve to a recognized layer. Move the target into a layer directory.",
@@ -90,6 +94,10 @@ export default createRule<[Options], MessageId>({
 
     return {
       // --- Import checks ---
+      "Identifier[name='Date']"(node: TSESTree.Identifier): void {
+        if (isDateReference(node))
+          context.report({ node, messageId: "noDate" });
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         checkImport(node.source.value, node);
       },

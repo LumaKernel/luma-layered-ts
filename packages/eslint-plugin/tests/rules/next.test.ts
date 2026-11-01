@@ -116,6 +116,11 @@ ruleTester.run("next", rule, {
     },
   ],
   invalid: [
+    {
+      code: `new Date();`,
+      filename: "/project/src/app/api/route.ts",
+      errors: [{ messageId: "noDate" }],
+    },
     // --- app/api: import violations ---
     {
       code: `import { useFoo } from "../../ui/hooks/bar";`,
@@ -218,12 +223,7 @@ ruleTester.run("next", rule, {
     {
       code: `new Date();`,
       filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "app/pages" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
 
     // --- app/pages: globalThis bypass banned ---

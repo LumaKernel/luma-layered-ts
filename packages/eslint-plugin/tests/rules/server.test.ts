@@ -58,6 +58,11 @@ ruleTester.run("server", rule, {
       filename: "/project/src/main.ts",
     },
 
+    // Non-global names that happen to be "Date"
+    {
+      code: `obj.Date; const o = { Date: 1 }; class A { Date() {} } let t: Ns.Date;`,
+      filename: "/project/src/infra/clock.ts",
+    },
     // --- adapter: pure codec (deterministic, environment-independent) ---
     ...[
       `new Intl.NumberFormat("ja-JP").format(n);`,
@@ -65,13 +70,10 @@ ruleTester.run("server", rule, {
       `new Intl.DateTimeFormat(locale, { ...base, hour: "2-digit" });`,
       `new Intl.Collator(locale).compare(a, b);`,
       `d.getUTCHours();`,
-      `new Date(Date.UTC(2024, 0, 1));`,
       `Temporal.ZonedDateTime.from(s);`,
     ].map((code) => ({ code, filename: "/project/src/adapter/format.ts" })),
     // infra may use the runtime locale
     { code: `d.toLocaleString();`, filename: "/project/src/infra/log.ts" },
-    { code: `new Date(iso);`, filename: "/project/src/adapter/time.ts" },
-    { code: `Date.parse(iso);`, filename: "/project/src/adapter/time.ts" },
     {
       code: `const f = (req: Request) => req.json();`,
       filename: "/project/src/adapter/request.ts",
@@ -105,8 +107,6 @@ ruleTester.run("server", rule, {
       filename: "/project/src/adapter/format.ts",
     },
     { code: `String(42);`, filename: "/project/src/infra/log.ts" },
-    { code: `new Date();`, filename: "/project/src/infra/clock.ts" },
-    { code: `Date.now();`, filename: "/project/src/infra/clock.ts" },
     {
       code: `globalThis["JSON"];`,
       filename: "/project/src/infra/parse.ts",
@@ -181,6 +181,26 @@ ruleTester.run("server", rule, {
     },
   ],
   invalid: [
+    // --- Date: banned in every layer (Temporal only) ---
+    ...[
+      "/project/src/core/foo.ts",
+      "/project/src/service/foo.ts",
+      "/project/src/adapter/time.ts",
+      "/project/src/infra/clock.ts",
+    ].flatMap((filename) =>
+      [
+        `new Date(iso);`,
+        `Date.now();`,
+        `Date.UTC(2024, 0, 1);`,
+        `const f = (d: Date) => d;`,
+        `const D = Date;`,
+      ].map((code) => ({
+        code,
+        filename,
+        errors: [{ messageId: "noDate" as const }],
+      })),
+    ),
+
     // --- adapter: impure / environment-specific ---
     {
       code: `import.meta.env.VITE_KEY;`,
@@ -192,11 +212,6 @@ ruleTester.run("server", rule, {
       ['d.toLocaleDateString("ja-JP");', ".toLocaleDateString()"],
       ["s.toLocaleUpperCase();", ".toLocaleUpperCase()"],
       ["a.localeCompare(b);", ".localeCompare()"],
-      ["d.getHours();", ".getHours()"],
-      ["d.getTimezoneOffset();", ".getTimezoneOffset()"],
-      ["d.setDate(1);", ".setDate()"],
-      ["d.toDateString();", ".toDateString()"],
-      ["new Date(2024, 0, 1);", "new Date(year, month, ...)"],
       ["new Intl.NumberFormat();", "Intl.NumberFormat"],
       [
         "Intl.DateTimeFormat().resolvedOptions().timeZone;",
@@ -224,11 +239,8 @@ ruleTester.run("server", rule, {
       ["crypto.randomUUID();", "crypto"],
       ['globalThis["fetch"];', "globalThis"],
       ['Function("return this")();', "Function"],
-      ["Date.now();", "Date.now"],
       ["Math.random();", "Math.random"],
       ["Temporal.Now.instant();", "Temporal.Now"],
-      ["new Date();", "new Date()"],
-      ["Date();", "Date()"],
     ].map(([code, name]) => ({
       code,
       filename: "/project/src/adapter/foo.ts",
@@ -444,22 +456,7 @@ ruleTester.run("server", rule, {
     {
       code: `new Date();`,
       filename: "/project/src/core/foo.ts",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "core" },
-        },
-      ],
-    },
-    {
-      code: `Date.now();`,
-      filename: "/project/src/service/foo.ts",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "service" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
 
     // --- Intl in inner layers ---
