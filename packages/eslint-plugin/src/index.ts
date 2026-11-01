@@ -2,6 +2,7 @@ import server from "./rules/server";
 import react from "./rules/react";
 import next from "./rules/next";
 import requireLayer from "./rules/require-layer";
+import unsafeDirective from "./rules/unsafe-directive";
 import type { TSESLint } from "@typescript-eslint/utils";
 
 export const rules = {
@@ -9,32 +10,52 @@ export const rules = {
   react,
   next,
   "require-layer": requireLayer,
+  "unsafe-directive": unsafeDirective,
 };
 
 const plugin = {
   rules,
 } satisfies TSESLint.Linter.Plugin;
 
+// Inline config is disabled everywhere, so `/* eslint-disable */` cannot suppress
+// unsafe-directive itself. The "unsafe-dir" config re-enables it under _unsafe_/.
+// When adding a config here, keep linterOptions and the unsafe-directive rule in it.
+const baseLinterOptions = {
+  noInlineConfig: true,
+} satisfies TSESLint.FlatConfig.LinterOptions;
+
 export const configs = {
   recommended: {
     plugins: {
       "@luma-layered-ts": plugin,
     },
+    linterOptions: baseLinterOptions,
     rules: {
       "@luma-layered-ts/server": "error",
       "@luma-layered-ts/react": "error",
       "@luma-layered-ts/require-layer": "error",
+      "@luma-layered-ts/unsafe-directive": "error",
     },
   } satisfies TSESLint.FlatConfig.Config,
   "recommended-next": {
     plugins: {
       "@luma-layered-ts": plugin,
     },
+    linterOptions: baseLinterOptions,
     rules: {
       "@luma-layered-ts/server": "error",
       "@luma-layered-ts/react": "error",
       "@luma-layered-ts/next": "error",
       "@luma-layered-ts/require-layer": "error",
+      "@luma-layered-ts/unsafe-directive": "error",
+    },
+  } satisfies TSESLint.FlatConfig.Config,
+  // Must come after recommended / recommended-next
+  "unsafe-dir": {
+    files: ["**/_unsafe_/**"],
+    linterOptions: {
+      noInlineConfig: false,
+      reportUnusedDisableDirectives: "error",
     },
   } satisfies TSESLint.FlatConfig.Config,
 };

@@ -20,4 +20,5 @@
    - React hooks (JSXなし) → ui/hooks
    - React描画コンポーネント → ui/components
    - ページ合成 → ui/pages
-7. ESLint実行で全エラーを解消。レイヤ移動によりimport/encoding制約が自動適用される
+7. 既存の検査抑制ディレクティブ(eslint-disable, @ts-ignore, coverage ignore等)は、まず抑制なしで書けないか検討し、残るものは該当コードを最小限に切り出して同じレイヤの`_unsafe_/`へ移す
+8. ESLint実行で全エラーを解消。レイヤ移動によりimport/encoding制約が自動適用される

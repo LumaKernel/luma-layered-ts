@@ -15,6 +15,12 @@
 
 `src/main.ts`は合成ルート。全レイヤからimport可。
 
+## `_unsafe_/`
+
+検査を抑制するディレクティブ(`eslint-disable*`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`, `istanbul|c8|v8 ignore`, `node:coverage ignore|disable`, `biome-ignore`, `oxlint-disable*`)は`_unsafe_/`ディレクトリ配下のファイルにしか書けない。テストファイルも同じ。
+
+`_unsafe_/`はそのコードが属するレイヤの中に置く(`src/infra/_unsafe_/`, `src/core/foo/_unsafe_/`)。レイヤの制約はそのまま適用される。抑制が必要な最小限のコードだけを切り出し、型安全なインターフェースで包んで同じレイヤに公開する。
+
 ## Next.js app router
 
 | ディレクトリ | import可 | 特徴 |
