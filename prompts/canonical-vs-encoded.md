@@ -7,7 +7,7 @@ inner layerの型はcanonical representation。JSON表現はencoded boundary rep
 | Canonical (inner layers) | Encoded (boundary) | 備考 |
 |---|---|---|
 | `Option<T>` | `T \| null` / `T \| undefined` | inner layerでnull/undefinedを直接扱わない |
-| `DateTime.Utc` | ISO 8601 string | `Date`はencoding globals禁止で検出 |
+| `DateTime.Utc` | ISO 8601 string | `Date`は全レイヤで禁止。encoded側との変換はadapterで`Temporal`を使う |
 | `BigDecimal` | `string` (numeric) | 精度を落とさない |
 | `Brand<"UserId">` | `string` | |
 | `ReadonlyArray<T>` | `T[]` | inner layerではimmutable必須 |

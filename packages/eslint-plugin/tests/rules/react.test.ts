@@ -339,22 +339,12 @@ ruleTester.run("react", rule, {
     {
       code: `new Date();`,
       filename: "/project/src/ui/components/card.tsx",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "ui/components" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
     {
       code: `Date.now();`,
       filename: "/project/src/ui/pages/home.tsx",
-      errors: [
-        {
-          messageId: "encodedGlobal",
-          data: { name: "Date", layer: "ui/pages" },
-        },
-      ],
+      errors: [{ messageId: "noDate" }],
     },
 
     // --- globalThis bypass ---

@@ -22,9 +22,11 @@
 
 対象: core, service, adapter, infra
 
+`Date`は全レイヤ(server, react, nextの対象すべて)で禁止。型注釈も対象。日時は`Temporal`を使う。`luma-ts/no-date`と重複するが、本プラグイン単体でも強制する。
+
 全レイヤでインポート行列を強制。core/serviceでは追加制約:
 
-- encoding globals禁止: `JSON`, `String`, `Number`, `Date`, `Temporal`, `globalThis`, `Function`, `Intl`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
+- encoding globals禁止: `JSON`, `String`, `Number`, `Temporal`, `globalThis`, `Function`, `Intl`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`, `performance`
 - Schema boundary禁止: `decode*`, `encode*`メソッド
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
@@ -34,13 +36,13 @@ adapter/infraはencoded representation操作を行う層。encoding globals・Sc
 
 adapterはサーバー(infra, app/api)とクライアント(ui/hooks, app/pages)の両方からimportされるため、決定的で実行環境に依存しない純粋な変換に限る:
 - IO・環境依存のglobals禁止: `fetch`, `process`, `performance`, `localStorage`, `document`, `navigator`, `crypto`, タイマー, `Buffer`, `require`等。迂回防止で`globalThis`, `window`, `self`, `global`, `Function`, `eval`も禁止
-- 非決定的な値禁止: `Date.now`, `Math.random`, `Temporal.Now`, 引数なしの`new Date()`, `Date()`
-- 実行環境のロケール・タイムゾーンへの依存禁止: `toLocale*`, `localeCompare`, Dateのローカル時刻系メソッド(`getHours`, `setDate`, `getTimezoneOffset`, `toDateString`等), `new Date(year, month, ...)`。`Intl`のコンストラクタはロケール必須、`Intl.DateTimeFormat`は`timeZone`必須(変数やspreadで渡すoptionsは静的に検査できないため許可)
+- 非決定的な値禁止: `Math.random`, `Temporal.Now`
+- 実行環境のロケール・タイムゾーンへの依存禁止: `toLocale*`, `localeCompare`。`Intl`のコンストラクタはロケール必須、`Intl.DateTimeFormat`は`timeZone`必須(変数やspreadで渡すoptionsは静的に検査できないため許可)
 - `import.meta`禁止
 - Node.js組み込みモジュールのimport禁止(`node:*`, `fs`, `path`等)
 - `Request`, `Response`, `Headers`, `FormData`はWeb標準のデータ型として許可
 
-検出できないもの: `Date#toString`とテンプレートリテラルでの暗黙の文字列化、オフセットなしの日時文字列のparse(ローカル時刻として解釈される)、IOを行うサードパーティパッケージのimport。また`Intl`の出力はNode.jsとブラウザでICUデータが異なると一致しないため、ロケール依存の書式化結果は1つの環境で計算して運ぶ。
+検出できないもの: IOを行うサードパーティパッケージのimport。また`Intl`の出力はNode.jsとブラウザでICUデータが異なると一致しないため、ロケール依存の書式化結果は1つの環境で計算して運ぶ。
 
 infraはインポート行列のみ。
 

@@ -12,12 +12,13 @@ import {
   ADAPTER_IMPURE_GLOBALS,
   ADAPTER_IMPURE_MEMBERS,
   ADAPTER_AMBIENT_LOCALE_METHODS,
-  ADAPTER_LOCAL_TIME_METHODS,
   INTL_LOCALE_CONSTRUCTORS,
   isNodeBuiltinImport,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
   STRING_CONSTRUCTION_METHODS,
+  isDateReference,
+  NO_DATE_MESSAGE,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
@@ -33,6 +34,7 @@ const SERVER_LAYERS = new Set<LayerName>([
 const INNER_LAYERS = new Set<LayerName>(["core", "service"]);
 
 type MessageId =
+  | "noDate"
   | "importViolation"
   | "importNonLayer"
   | "encodedGlobal"
@@ -53,6 +55,7 @@ export default createRule<[Options], MessageId>({
         "Enforce layered architecture for server-side layers (core, service, adapter, infra). Checks imports, encoded representation globals, Schema boundary, and string interpretation.",
     },
     messages: {
+      noDate: NO_DATE_MESSAGE,
       importViolation: "'{{fromLayer}}' cannot import from '{{toLayer}}'.",
       importNonLayer:
         "Import '{{importPath}}' does not resolve to a recognized layer. Move the target into a layer directory.",
@@ -169,6 +172,10 @@ export default createRule<[Options], MessageId>({
 
     return {
       // --- Import checks (all server layers) ---
+      "Identifier[name='Date']"(node: TSESTree.Identifier): void {
+        if (isDateReference(node))
+          context.report({ node, messageId: "noDate" });
+      },
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
         checkImport(node.source.value, node);
       },
@@ -258,49 +265,10 @@ export default createRule<[Options], MessageId>({
                     fix: "Use an Intl constructor with an explicit locale (and timeZone for dates).",
                   },
                 });
-              } else if (ADAPTER_LOCAL_TIME_METHODS.has(method)) {
-                context.report({
-                  node,
-                  messageId: "adapterAmbientLocale",
-                  data: {
-                    name: `.${method}()`,
-                    fix: "Use the UTC variant or Temporal with an explicit time zone.",
-                  },
-                });
               }
             },
             NewExpression(node: TSESTree.NewExpression): void {
               checkIntl(node);
-              // new Date(year, month, ...) interprets the fields in local time
-              if (
-                node.callee.type === AST_NODE_TYPES.Identifier &&
-                node.callee.name === "Date" &&
-                node.arguments.length >= 2
-              ) {
-                context.report({
-                  node,
-                  messageId: "adapterAmbientLocale",
-                  data: {
-                    name: "new Date(year, month, ...)",
-                    fix: "Use Date.UTC or Temporal with an explicit time zone.",
-                  },
-                });
-              }
-            },
-            // `new Date()` / `Date()` read the clock
-            "NewExpression[callee.name='Date'][arguments.length=0], CallExpression[callee.name='Date']"(
-              node: TSESTree.NewExpression | TSESTree.CallExpression,
-            ): void {
-              context.report({
-                node,
-                messageId: "adapterImpure",
-                data: {
-                  name:
-                    node.type === AST_NODE_TYPES.NewExpression
-                      ? "new Date()"
-                      : "Date()",
-                },
-              });
             },
           }
         : {}),

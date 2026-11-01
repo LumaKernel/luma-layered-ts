@@ -1,4 +1,5 @@
 import { builtinModules } from "node:module";
+import { AST_NODE_TYPES, TSESTree } from "@typescript-eslint/utils";
 
 export const LAYER_NAMES = [
   "core",
@@ -114,7 +115,6 @@ export const ENCODING_GLOBALS = new Set([
   "JSON",
   "String",
   "Number",
-  "Date",
   "Temporal",
   "globalThis",
   "Function",
@@ -223,12 +223,11 @@ export const ADAPTER_IMPURE_GLOBALS = new Set([
   "eval",
 ]);
 
-// Non-deterministic members: `Date.now`, `Math.random`, `Temporal.Now`
+// Non-deterministic members: `Math.random`, `Temporal.Now`
 export const ADAPTER_IMPURE_MEMBERS: ReadonlyMap<
   string,
   ReadonlySet<string>
 > = new Map([
-  ["Date", new Set(["now"])],
   ["Math", new Set(["random"])],
   ["Temporal", new Set(["Now"])],
 ]);
@@ -249,30 +248,6 @@ export const ADAPTER_AMBIENT_LOCALE_METHODS = new Set([
   "toLocaleUpperCase",
   "toLocaleLowerCase",
   "localeCompare",
-]);
-
-// Date methods that read or write in the runtime's local time zone
-export const ADAPTER_LOCAL_TIME_METHODS = new Set([
-  "getFullYear",
-  "getYear",
-  "getMonth",
-  "getDate",
-  "getDay",
-  "getHours",
-  "getMinutes",
-  "getSeconds",
-  "getMilliseconds",
-  "getTimezoneOffset",
-  "setFullYear",
-  "setYear",
-  "setMonth",
-  "setDate",
-  "setHours",
-  "setMinutes",
-  "setSeconds",
-  "setMilliseconds",
-  "toDateString",
-  "toTimeString",
 ]);
 
 // Intl constructors whose first argument is the locale
@@ -305,3 +280,29 @@ export const STRING_CONSTRUCTION_METHODS = new Set([
   "toLocaleUpperCase",
   "toLocaleLowerCase",
 ]);
+
+// --- Date ---
+// Date is banned in every layer (mutable, local time by default, millisecond-only). Use Temporal.
+export const NO_DATE_MESSAGE =
+  "'Date' is not allowed in any layer. Use Temporal.";
+
+export function isDateReference(node: TSESTree.Identifier): boolean {
+  if (node.name !== "Date") return false;
+  const parent = node.parent;
+  // obj.Date, { Date: x }, class { Date() {} }, Ns.Date
+  if (
+    (parent.type === AST_NODE_TYPES.MemberExpression &&
+      parent.property === node &&
+      !parent.computed) ||
+    ((parent.type === AST_NODE_TYPES.Property ||
+      parent.type === AST_NODE_TYPES.MethodDefinition ||
+      parent.type === AST_NODE_TYPES.PropertyDefinition) &&
+      parent.key === node &&
+      !parent.computed &&
+      !(parent.type === AST_NODE_TYPES.Property && parent.shorthand)) ||
+    (parent.type === AST_NODE_TYPES.TSQualifiedName && parent.right === node)
+  ) {
+    return false;
+  }
+  return true;
+}
