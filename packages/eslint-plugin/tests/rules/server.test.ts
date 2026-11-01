@@ -59,6 +59,17 @@ ruleTester.run("server", rule, {
     },
 
     // --- adapter: pure codec (deterministic, environment-independent) ---
+    ...[
+      `new Intl.NumberFormat("ja-JP").format(n);`,
+      `new Intl.DateTimeFormat(locale, opts);`,
+      `new Intl.DateTimeFormat(locale, { ...base, hour: "2-digit" });`,
+      `new Intl.Collator(locale).compare(a, b);`,
+      `d.getUTCHours();`,
+      `new Date(Date.UTC(2024, 0, 1));`,
+      `Temporal.ZonedDateTime.from(s);`,
+    ].map((code) => ({ code, filename: "/project/src/adapter/format.ts" })),
+    // infra may use the runtime locale
+    { code: `d.toLocaleString();`, filename: "/project/src/infra/log.ts" },
     { code: `new Date(iso);`, filename: "/project/src/adapter/time.ts" },
     { code: `Date.parse(iso);`, filename: "/project/src/adapter/time.ts" },
     {
@@ -105,7 +116,7 @@ ruleTester.run("server", rule, {
       filename: "/project/src/infra/parse.ts",
     },
     {
-      code: `new Intl.DateTimeFormat("ja-JP").format(ts);`,
+      code: `new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo" }).format(ts);`,
       filename: "/project/src/adapter/format.ts",
     },
     {
@@ -171,6 +182,39 @@ ruleTester.run("server", rule, {
   ],
   invalid: [
     // --- adapter: impure / environment-specific ---
+    {
+      code: `import.meta.env.VITE_KEY;`,
+      filename: "/project/src/adapter/foo.ts",
+      errors: [{ messageId: "adapterImpure", data: { name: "import.meta" } }],
+    },
+    ...[
+      ["d.toLocaleString();", ".toLocaleString()"],
+      ['d.toLocaleDateString("ja-JP");', ".toLocaleDateString()"],
+      ["s.toLocaleUpperCase();", ".toLocaleUpperCase()"],
+      ["a.localeCompare(b);", ".localeCompare()"],
+      ["d.getHours();", ".getHours()"],
+      ["d.getTimezoneOffset();", ".getTimezoneOffset()"],
+      ["d.setDate(1);", ".setDate()"],
+      ["d.toDateString();", ".toDateString()"],
+      ["new Date(2024, 0, 1);", "new Date(year, month, ...)"],
+      ["new Intl.NumberFormat();", "Intl.NumberFormat"],
+      [
+        "Intl.DateTimeFormat().resolvedOptions().timeZone;",
+        "Intl.DateTimeFormat",
+      ],
+      ["new Intl.Collator(undefined);", "Intl.Collator"],
+      ["new Intl.PluralRules([]);", "Intl.PluralRules"],
+      ['new Intl.DateTimeFormat("ja-JP");', "Intl.DateTimeFormat"],
+      [
+        'new Intl.DateTimeFormat("ja-JP", { hour: "2-digit" });',
+        "Intl.DateTimeFormat",
+      ],
+    ].map(([code, name]) => ({
+      code,
+      name: `adapter ambient locale: ${name}`,
+      filename: "/project/src/adapter/format.ts",
+      errors: [{ messageId: "adapterAmbientLocale" as const }],
+    })),
     ...[
       ["fetch(url);", "fetch"],
       ["process.env.API_KEY;", "process"],

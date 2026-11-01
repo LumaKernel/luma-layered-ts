@@ -11,6 +11,9 @@ import {
   IO_GLOBALS,
   ADAPTER_IMPURE_GLOBALS,
   ADAPTER_IMPURE_MEMBERS,
+  ADAPTER_AMBIENT_LOCALE_METHODS,
+  ADAPTER_LOCAL_TIME_METHODS,
+  INTL_LOCALE_CONSTRUCTORS,
   isNodeBuiltinImport,
   SCHEMA_BOUNDARY_METHODS,
   STRING_INTERPRETATION_METHODS,
@@ -36,7 +39,8 @@ type MessageId =
   | "schemaBoundary"
   | "encodedMethod"
   | "adapterImpure"
-  | "adapterNodeBuiltin";
+  | "adapterNodeBuiltin"
+  | "adapterAmbientLocale";
 
 export default createRule<[Options], MessageId>({
   name: "server",
@@ -62,6 +66,8 @@ export default createRule<[Options], MessageId>({
         "'{{name}}' is IO, environment-specific or non-deterministic. adapter is a pure codec shared by server and client. Move this to infra or ui/hooks.",
       adapterNodeBuiltin:
         "'{{importPath}}' is a Node.js built-in. adapter is a pure codec shared by server and client.",
+      adapterAmbientLocale:
+        "'{{name}}' depends on the runtime's locale or time zone, which differ between server and client. {{fix}}",
     },
     schema: [],
   },
@@ -101,6 +107,58 @@ export default createRule<[Options], MessageId>({
           node,
           messageId: "importViolation",
           data: { fromLayer: layer, toLayer },
+        });
+      }
+    }
+
+    // Intl.X() / new Intl.X(): the locale must be given, and DateTimeFormat needs a timeZone.
+    // Options passed as a variable or with a spread cannot be checked statically and are allowed.
+    function checkIntl(
+      node: TSESTree.CallExpression | TSESTree.NewExpression,
+    ): void {
+      const callee = node.callee;
+      if (
+        callee.type !== AST_NODE_TYPES.MemberExpression ||
+        callee.computed ||
+        callee.object.type !== AST_NODE_TYPES.Identifier ||
+        callee.object.name !== "Intl" ||
+        callee.property.type !== AST_NODE_TYPES.Identifier ||
+        !INTL_LOCALE_CONSTRUCTORS.has(callee.property.name)
+      ) {
+        return;
+      }
+      const name = `Intl.${callee.property.name}`;
+      const [locale, options] = node.arguments;
+      const missingLocale =
+        locale === undefined ||
+        (locale.type === AST_NODE_TYPES.Identifier &&
+          locale.name === "undefined") ||
+        (locale.type === AST_NODE_TYPES.ArrayExpression &&
+          locale.elements.length === 0);
+      if (missingLocale) {
+        context.report({
+          node,
+          messageId: "adapterAmbientLocale",
+          data: { name, fix: "Pass the locale explicitly." },
+        });
+        return;
+      }
+      if (callee.property.name !== "DateTimeFormat") return;
+      const hasTimeZone =
+        options !== undefined &&
+        (options.type !== AST_NODE_TYPES.ObjectExpression ||
+          options.properties.some(
+            (p) =>
+              p.type === AST_NODE_TYPES.SpreadElement ||
+              (!p.computed &&
+                p.key.type === AST_NODE_TYPES.Identifier &&
+                p.key.name === "timeZone"),
+          ));
+      if (!hasTimeZone) {
+        context.report({
+          node,
+          messageId: "adapterAmbientLocale",
+          data: { name, fix: "Pass the timeZone option explicitly." },
         });
       }
     }
@@ -166,6 +224,62 @@ export default createRule<[Options], MessageId>({
                   node,
                   messageId: "adapterImpure",
                   data: { name },
+                });
+              }
+            },
+            // import.meta.env etc. read the build / runtime environment
+            MetaProperty(node: TSESTree.MetaProperty): void {
+              context.report({
+                node,
+                messageId: "adapterImpure",
+                data: { name: `${node.meta.name}.${node.property.name}` },
+              });
+            },
+            CallExpression(node: TSESTree.CallExpression): void {
+              checkIntl(node);
+              if (
+                node.callee.type !== AST_NODE_TYPES.MemberExpression ||
+                node.callee.computed ||
+                node.callee.property.type !== AST_NODE_TYPES.Identifier
+              ) {
+                return;
+              }
+              const method = node.callee.property.name;
+              if (ADAPTER_AMBIENT_LOCALE_METHODS.has(method)) {
+                context.report({
+                  node,
+                  messageId: "adapterAmbientLocale",
+                  data: {
+                    name: `.${method}()`,
+                    fix: "Use an Intl constructor with an explicit locale (and timeZone for dates).",
+                  },
+                });
+              } else if (ADAPTER_LOCAL_TIME_METHODS.has(method)) {
+                context.report({
+                  node,
+                  messageId: "adapterAmbientLocale",
+                  data: {
+                    name: `.${method}()`,
+                    fix: "Use the UTC variant or Temporal with an explicit time zone.",
+                  },
+                });
+              }
+            },
+            NewExpression(node: TSESTree.NewExpression): void {
+              checkIntl(node);
+              // new Date(year, month, ...) interprets the fields in local time
+              if (
+                node.callee.type === AST_NODE_TYPES.Identifier &&
+                node.callee.name === "Date" &&
+                node.arguments.length >= 2
+              ) {
+                context.report({
+                  node,
+                  messageId: "adapterAmbientLocale",
+                  data: {
+                    name: "new Date(year, month, ...)",
+                    fix: "Use Date.UTC or Temporal with an explicit time zone.",
+                  },
                 });
               }
             },

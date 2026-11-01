@@ -239,3 +239,51 @@ export function isNodeBuiltinImport(importPath: string): boolean {
     builtinModules.includes(importPath.split("/")[0])
   );
 }
+
+// Methods that silently use the runtime's locale or time zone.
+// Locale-aware formatting goes through Intl constructors with an explicit locale.
+export const ADAPTER_AMBIENT_LOCALE_METHODS = new Set([
+  "toLocaleString",
+  "toLocaleDateString",
+  "toLocaleTimeString",
+  "toLocaleUpperCase",
+  "toLocaleLowerCase",
+  "localeCompare",
+]);
+
+// Date methods that read or write in the runtime's local time zone
+export const ADAPTER_LOCAL_TIME_METHODS = new Set([
+  "getFullYear",
+  "getYear",
+  "getMonth",
+  "getDate",
+  "getDay",
+  "getHours",
+  "getMinutes",
+  "getSeconds",
+  "getMilliseconds",
+  "getTimezoneOffset",
+  "setFullYear",
+  "setYear",
+  "setMonth",
+  "setDate",
+  "setHours",
+  "setMinutes",
+  "setSeconds",
+  "setMilliseconds",
+  "toDateString",
+  "toTimeString",
+]);
+
+// Intl constructors whose first argument is the locale
+export const INTL_LOCALE_CONSTRUCTORS = new Set([
+  "DateTimeFormat",
+  "NumberFormat",
+  "Collator",
+  "PluralRules",
+  "RelativeTimeFormat",
+  "ListFormat",
+  "DisplayNames",
+  "Segmenter",
+  "DurationFormat",
+]);

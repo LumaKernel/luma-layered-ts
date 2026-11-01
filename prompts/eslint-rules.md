@@ -29,8 +29,12 @@ adapter/infraはencoded representation操作を行う層。encoding globals・Sc
 adapterはサーバー(infra, app/api)とクライアント(ui/hooks, app/pages)の両方からimportされるため、決定的で実行環境に依存しない純粋な変換に限る:
 - IO・環境依存のglobals禁止: `fetch`, `process`, `performance`, `localStorage`, `document`, `navigator`, `crypto`, タイマー, `Buffer`, `require`等。迂回防止で`globalThis`, `window`, `self`, `global`, `Function`, `eval`も禁止
 - 非決定的な値禁止: `Date.now`, `Math.random`, `Temporal.Now`, 引数なしの`new Date()`, `Date()`
+- 実行環境のロケール・タイムゾーンへの依存禁止: `toLocale*`, `localeCompare`, Dateのローカル時刻系メソッド(`getHours`, `setDate`, `getTimezoneOffset`, `toDateString`等), `new Date(year, month, ...)`。`Intl`のコンストラクタはロケール必須、`Intl.DateTimeFormat`は`timeZone`必須(変数やspreadで渡すoptionsは静的に検査できないため許可)
+- `import.meta`禁止
 - Node.js組み込みモジュールのimport禁止(`node:*`, `fs`, `path`等)
 - `Request`, `Response`, `Headers`, `FormData`はWeb標準のデータ型として許可
+
+検出できないもの: `Date#toString`とテンプレートリテラルでの暗黙の文字列化、オフセットなしの日時文字列のparse(ローカル時刻として解釈される)、IOを行うサードパーティパッケージのimport。また`Intl`の出力はNode.jsとブラウザでICUデータが異なると一致しないため、ロケール依存の書式化結果は1つの環境で計算して運ぶ。
 
 infraはインポート行列のみ。
 
