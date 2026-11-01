@@ -41,7 +41,22 @@ export function isTestFile(filePath: string): boolean {
   return /\.(test|spec|stories)\.[^/]+$/.test(filePath);
 }
 
+// Next.js file conventions that must sit directly under src/ (outside app/).
+// They are wiring roots like app/, so they get the constraints of the matching app/ layer
+// instead of being exempted from layer checks.
+const NEXT_ROOT_CONVENTIONS: ReadonlyMap<string, LayerName> = new Map([
+  ["proxy", "app/api"],
+  ["middleware", "app/api"],
+  ["instrumentation", "app/api"],
+  ["instrumentation-client", "app/pages"],
+  ["mdx-components", "app/pages"],
+]);
+
 export function getLayerFromPath(filePath: string): LayerName | null {
+  const rootFile = filePath.match(/\/src\/([^/.]+)\.[^/]+$/);
+  const rootLayer = rootFile && NEXT_ROOT_CONVENTIONS.get(rootFile[1]);
+  if (rootLayer) return rootLayer;
+
   // Check app/api before app/pages (more specific first)
   if (filePath.match(/\/src\/app\/api\//)) return "app/api";
   if (filePath.match(/\/src\/app\//)) return "app/pages";

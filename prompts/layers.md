@@ -29,6 +29,8 @@ React effect hook(`useEffect`, `useLayoutEffect`, `useInsertionEffect`)の使用
 | `src/app/api/**` | core, service, adapter, infra | サーバー側wiring root。実処理はadapter/infra/serviceに委譲。 |
 | `src/app/**`(api以外) | core, service, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。 |
 
+Next.jsが`src/`直下に要求する規約ファイルもwiring root。`proxy`, `middleware`, `instrumentation`はapp/api、`instrumentation-client`, `mdx-components`はapp/pagesと同じ制約。
+
 app/配下は薄いエントリーポイント。ロジックやUI実装を直接書かない。
 
 route handler例(悪い例 → 良い例):
