@@ -25,6 +25,8 @@
 
 `serialize*`, `deserialize*`, `encode*`, `decode*`, `parse*`という名前の関数(関数宣言、関数を代入する変数、メソッド、関数型のinterface/typeメンバ)をadapter/infra以外で定義することを禁止する。prefixの直後は大文字・数字・`_`・終端のみ一致(`parsed`, `decoder`は対象外)。テストファイルは対象外。
 
+`@luma-layered-ts/types`の`DisplayText.make`はadapterでのみ呼べる(名前付きimport、namespace import、分割代入を検出)。表示テキストを作れるのはadapterの書式化関数だけになる。
+
 呼び出し側は検査しない。codecをadapterに置けば、どの層から呼べるかはインポート行列が決める。
 
 ## `strict-collection`
@@ -53,9 +55,10 @@ adapterはサーバー(infra, app/api)とクライアント(ui/hooks, app/pages)
 - 実行環境のロケール・タイムゾーンへの依存禁止: `toLocale*`, `localeCompare`。`Intl`のコンストラクタはロケール必須、`Intl.DateTimeFormat`は`timeZone`必須(変数やspreadで渡すoptionsは静的に検査できないため許可)
 - `import.meta`禁止
 - Node.js組み込みモジュールのimport禁止(`node:*`, `fs`, `path`等)
+- 外部パッケージは許可リストのみ: 既定は`effect`と`@luma-layered-ts/types`。IOを行わないパッケージだけを`server`ルールのオプション`adapterAllowedPackages`に追加する(`["error", { adapterAllowedPackages: ["some-pure-lib"] }]`)。型のみのimportは対象外
 - `Request`, `Response`, `Headers`, `FormData`はWeb標準のデータ型として許可
 
-検出できないもの: IOを行うサードパーティパッケージのimport。また`Intl`の出力はNode.jsとブラウザでICUデータが異なると一致しないため、ロケール依存の書式化結果は1つの環境で計算して運ぶ。
+検出できないもの: `Intl`の出力の環境差(Node.jsとブラウザでICUデータが異なる)。canonical-vs-encoded.mdの「実行環境に依存する出力」に従う。
 
 infraはインポート行列のみ。
 

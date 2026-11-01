@@ -23,6 +23,19 @@ function invalid(code: string, name: string, layer: string, filename: string) {
 
 ruleTester.run("codec-placement", rule, {
   valid: [
+    // DisplayText: created in adapter, only typed elsewhere
+    {
+      code: `import { DisplayText } from "@luma-layered-ts/types";\nexport const label = (n: Name) => DisplayText.make(n);`,
+      filename: "/project/src/adapter/display/name.ts",
+    },
+    {
+      code: `import type { DisplayText } from "@luma-layered-ts/types";\nconst f = (t: DisplayText.DisplayText) => t;`,
+      filename: "/project/src/ui/components/label.tsx",
+    },
+    {
+      code: `import { DisplayText } from "other-lib";\nDisplayText.make(s);`,
+      filename: "/project/src/ui/hooks/use-label.ts",
+    },
     // adapter / infra define codecs
     {
       code: `export function serializeItem(i: Item): string { return ""; }`,
@@ -60,6 +73,40 @@ ruleTester.run("codec-placement", rule, {
     { code: `function parseArgs() {}`, filename: "/project/scripts/gen.ts" },
   ],
   invalid: [
+    // DisplayText.make only in adapter
+    ...[
+      [
+        `import { DisplayText } from "@luma-layered-ts/types";\nDisplayText.make(s);`,
+        "/project/src/ui/hooks/use-label.ts",
+        "ui/hooks",
+      ],
+      [
+        `import { DisplayText as DT } from "@luma-layered-ts/types";\nconst f = DT.make;`,
+        "/project/src/core/label.ts",
+        "core",
+      ],
+      [
+        `import * as T from "@luma-layered-ts/types";\nT.DisplayText.make(s);`,
+        "/project/src/ui/components/label.tsx",
+        "ui/components",
+      ],
+      [
+        `import { DisplayText } from "@luma-layered-ts/types";\nconst { make } = DisplayText;`,
+        "/project/src/app/page.tsx",
+        "app/pages",
+      ],
+      [
+        `import { DisplayText } from "@luma-layered-ts/types";\nDisplayText.make(s);`,
+        "/project/src/infra/log.ts",
+        "infra",
+      ],
+    ].map(([code, filename, layer]) => ({
+      code,
+      filename,
+      errors: [
+        { messageId: "displayTextOutsideAdapter" as const, data: { layer } },
+      ],
+    })),
     invalid(
       `export function serializeItem(i: Item): string { return ""; }`,
       "serializeItem",

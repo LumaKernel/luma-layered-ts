@@ -321,3 +321,23 @@ export function isDateReference(node: TSESTree.Identifier): boolean {
   }
   return true;
 }
+
+// --- adapter package allowlist ---
+// Third-party packages can do IO, so adapter imports only packages known to be pure.
+// Projects extend this with the server rule option `adapterAllowedPackages`.
+export const DEFAULT_ADAPTER_PACKAGES: readonly string[] = [
+  "effect",
+  "@luma-layered-ts/types",
+];
+
+// "effect/Schema" -> "effect", "@scope/pkg/sub" -> "@scope/pkg".
+// null for relative, absolute, `@/` alias and `#` subpath imports.
+export function packageName(importPath: string): string | null {
+  if (/^[./#]/.test(importPath) || isNonLayerAliasImport(importPath)) {
+    return null;
+  }
+  const segments = importPath.split("/");
+  return importPath.startsWith("@")
+    ? segments.slice(0, 2).join("/")
+    : segments[0];
+}

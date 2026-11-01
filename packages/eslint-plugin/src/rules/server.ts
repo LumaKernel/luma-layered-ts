@@ -19,10 +19,14 @@ import {
   STRING_CONSTRUCTION_METHODS,
   isDateReference,
   NO_DATE_MESSAGE,
+  DEFAULT_ADAPTER_PACKAGES,
+  packageName,
 } from "../layers.js";
 import type { LayerName } from "../layers.js";
 
-type Options = Record<string, never>;
+type Options = {
+  readonly adapterAllowedPackages?: readonly string[];
+};
 const defaultOptions: Options = {};
 
 const SERVER_LAYERS = new Set<LayerName>([
@@ -44,6 +48,7 @@ type MessageId =
   | "stringConstruction"
   | "adapterImpure"
   | "adapterNodeBuiltin"
+  | "adapterPackageNotAllowed"
   | "adapterAmbientLocale";
 
 export default createRule<[Options], MessageId>({
@@ -73,13 +78,23 @@ export default createRule<[Options], MessageId>({
         "'{{name}}' is IO, environment-specific or non-deterministic. adapter is a pure codec shared by server and client. Move this to infra or ui/hooks.",
       adapterNodeBuiltin:
         "'{{importPath}}' is a Node.js built-in. adapter is a pure codec shared by server and client.",
+      adapterPackageNotAllowed:
+        "'{{name}}' is not in the adapter package allowlist. adapter is a pure codec shared by server and client; add the package to the server rule option adapterAllowedPackages only if it does no IO.",
       adapterAmbientLocale:
         "'{{name}}' depends on the runtime's locale or time zone, which differ between server and client. {{fix}}",
     },
-    schema: [],
+    schema: [
+      {
+        type: "object",
+        properties: {
+          adapterAllowedPackages: { type: "array", items: { type: "string" } },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
   defaultOptions: [defaultOptions],
-  create(context) {
+  create(context, [options]) {
     const filePath = context.filename;
     if (isTestFile(filePath)) return {};
     const layer = getLayerFromPath(filePath);
@@ -88,7 +103,16 @@ export default createRule<[Options], MessageId>({
     const isInner = INNER_LAYERS.has(layer);
     const isAdapter = layer === "adapter";
 
-    function checkImport(importPath: string, node: TSESTree.Node): void {
+    const adapterPackages = new Set([
+      ...DEFAULT_ADAPTER_PACKAGES,
+      ...(options.adapterAllowedPackages ?? []),
+    ]);
+
+    function checkImport(
+      importPath: string,
+      node: TSESTree.Node,
+      typeOnly = false,
+    ): void {
       if (isAdapter && isNodeBuiltinImport(importPath)) {
         context.report({
           node,
@@ -105,6 +129,19 @@ export default createRule<[Options], MessageId>({
             node,
             messageId: "importNonLayer",
             data: { importPath },
+          });
+        }
+        const name = packageName(importPath);
+        if (
+          isAdapter &&
+          !typeOnly &&
+          name !== null &&
+          !adapterPackages.has(name)
+        ) {
+          context.report({
+            node,
+            messageId: "adapterPackageNotAllowed",
+            data: { name },
           });
         }
         return;
@@ -177,7 +214,16 @@ export default createRule<[Options], MessageId>({
           context.report({ node, messageId: "noDate" });
       },
       ImportDeclaration(node: TSESTree.ImportDeclaration): void {
-        checkImport(node.source.value, node);
+        // Type-only imports have no runtime effect
+        const typeOnly =
+          node.importKind === "type" ||
+          (node.specifiers.length > 0 &&
+            node.specifiers.every(
+              (s) =>
+                s.type === AST_NODE_TYPES.ImportSpecifier &&
+                s.importKind === "type",
+            ));
+        checkImport(node.source.value, node, typeOnly);
       },
       ImportExpression(node: TSESTree.ImportExpression): void {
         if (

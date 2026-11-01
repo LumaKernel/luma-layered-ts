@@ -64,6 +64,24 @@ ruleTester.run("server", rule, {
       filename: "/project/src/infra/clock.ts",
     },
     // --- adapter: pure codec (deterministic, environment-independent) ---
+    // Package allowlist: effect, @luma-layered-ts/types, type-only imports, configured packages
+    ...[
+      `import { Schema } from "effect/Schema";`,
+      `import { PlainDate } from "@luma-layered-ts/types";`,
+      `import type { PrismaClient } from "@prisma/client";`,
+      `import { type Row } from "pg";`,
+      `import { codec } from "./codec";`,
+    ].map((code) => ({ code, filename: "/project/src/adapter/codec.ts" })),
+    {
+      code: `import { z } from "pure-lib/sub";`,
+      filename: "/project/src/adapter/codec.ts",
+      options: [{ adapterAllowedPackages: ["pure-lib"] }],
+    },
+    // Other layers are not restricted
+    {
+      code: `import { Pool } from "pg";`,
+      filename: "/project/src/infra/db.ts",
+    },
     ...[
       `new Intl.NumberFormat("ja-JP").format(n);`,
       `new Intl.DateTimeFormat(locale, opts);`,
@@ -234,6 +252,19 @@ ruleTester.run("server", rule, {
     ),
 
     // --- adapter: impure / environment-specific ---
+    ...[
+      ['import { Pool } from "pg";', "pg"],
+      ['import axios from "axios";', "axios"],
+      ['import { HttpClient } from "@effect/platform";', "@effect/platform"],
+      ['import "side-effect-lib";', "side-effect-lib"],
+      ['const m = await import("@scope/lib/deep");', "@scope/lib"],
+    ].map(([code, name]) => ({
+      code,
+      filename: "/project/src/adapter/codec.ts",
+      errors: [
+        { messageId: "adapterPackageNotAllowed" as const, data: { name } },
+      ],
+    })),
     {
       code: `import.meta.env.VITE_KEY;`,
       filename: "/project/src/adapter/foo.ts",

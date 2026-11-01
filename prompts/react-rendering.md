@@ -4,7 +4,7 @@ string解釈は中間層で禁止。表示テキストはadapterの書式化関�
 
 ## hooks
 
-domain型を返す。JSX禁止。表示が必要な値はadapterの書式化関数を呼んで表示テキストにして返す。
+domain型を返す。JSX禁止。表示が必要な値はadapterの書式化関数を呼び、`DisplayText`にして返す。ロケールとタイムゾーンは入口から受け取った値を使う(canonical-vs-encoded.mdの実行環境に依存する出力)。
 
 effect hookは`ui/hooks/_unsafe_/`内のカスタムhookでのみ使う(layers.mdの`_unsafe_/`)。派生値は描画中に計算、イベント起因の処理はハンドラ、状態遷移はXStateに置き、effectに頼らない。
 
@@ -15,7 +15,7 @@ effect hookは`ui/hooks/_unsafe_/`内のカスタムhookでのみ使う(layers.m
 - `.trim()`許容
 - `.split()`, `.match()`, `.includes()`, `.replace()`禁止
 - 分岐は`_tag`のexhaustive switch。string値による条件分岐禁止。
-- `Intl`禁止。表示テキストはhooks(またはapp/pages)から受け取る。raw timestamp等のプリミティブを受け取って自分でフォーマットしない。
+- `Intl`禁止。表示テキストは`DisplayText`としてhooks(またはapp/pages)から受け取り、そのまま描画する。raw timestamp等のプリミティブを受け取って自分でフォーマットしない。
 
 ## 状態管理
 
