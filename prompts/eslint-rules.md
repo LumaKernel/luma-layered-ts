@@ -10,6 +10,7 @@
 
 例外:
 - `src/main.ts`(合成ルート)はレイヤ外でも許容
+- Next.jsの`src/`直下規約ファイル(`proxy`, `middleware`, `instrumentation`, `instrumentation-client`, `mdx-components`)は対応するapp/レイヤとして扱う(`next`参照)。規約ファイルのために`require-layer`を無効化しない
 - テストファイル(`.test.ts`, `.spec.ts`)とStorybook(`.stories.tsx`)は全ルールから除外。フィクスチャ作成のためにレイヤ横断importが必要
 
 ## `server`
@@ -48,14 +49,14 @@ adapter/infraはインポート行列のみ。encoded representation操作はこ
 
 ## `next`
 
-対象: src/app/ 配下のNext.js app routerファイル
+対象: src/app/ 配下のNext.js app routerファイルと、Next.jsが`src/`直下に置くことを要求する規約ファイル
 
 2つのサブレイヤ:
 
 | サブレイヤ | パス | import可能 | 制約 |
 |---|---|---|---|
-| `app/api` | `src/app/api/**` | core, service, adapter, infra | インポート行列のみ(サーバー側wiring root) |
-| `app/pages` | `src/app/**`(api以外) | core, service, ui/hooks, ui/components, ui/containers, ui/pages | encoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
+| `app/api` | `src/app/api/**`, `src/{proxy,middleware,instrumentation}.*` | core, service, adapter, infra | インポート行列のみ(サーバー側wiring root) |
+| `app/pages` | `src/app/**`(api以外), `src/{instrumentation-client,mdx-components}.*` | core, service, ui/hooks, ui/components, ui/containers, ui/pages | encoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
 
 `app/api`のroute handlerは薄いwiring rootとして、実処理はadapter/infra/serviceに委譲する。
 `app/pages`のpage/layoutは薄いwiring rootとして、実UIは`ui/pages`や`ui/components`に委譲する。
