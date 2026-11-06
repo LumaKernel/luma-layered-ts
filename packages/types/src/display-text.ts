@@ -7,5 +7,5 @@ import { Brand } from "effect";
  */
 export type DisplayText = string & Brand.Brand<"DisplayText">;
 
-export const make: Brand.Brand.Constructor<DisplayText> =
+export const make: Brand.Constructor<DisplayText> =
   Brand.nominal<DisplayText>();

@@ -43,7 +43,7 @@
 
 - encoding globals禁止: `JSON`, `String`, `Number`, `Temporal`, `globalThis`, `Function`, `Intl`, `parseInt`, `parseFloat`, `encodeURIComponent`, `decodeURIComponent`, `encodeURI`, `decodeURI`, `atob`, `btoa`
 - IO globals禁止: `fetch`, `Request`, `Response`, `Headers`, `FormData`, `process`, `performance`
-- Schema boundary禁止: `decode*`, `encode*`メソッド
+- Schema boundary禁止: effect 4の実行関数 `{decode,encode}[Unknown]{Effect,Exit,Option,Result,Promise,Sync}`。スキーマ定義の`Schema.decode`/`encode`/`decodeTo`/`encodeTo`は対象外
 - string解釈メソッド禁止: `split`, `match`, `replace`, `startsWith`, `endsWith`, `substring`, `charAt`, `trim`, `padStart`等。`includes`/`indexOf`/`slice`はArrayにも存在するため型情報なしでは区別不能、除外
 - 文字列生成禁止: 補間を含むテンプレートリテラル、文字列リテラルを含む`+`/`+=`、`join`, `toString`, `toFixed`, `toPrecision`, `toExponential`, `toUpperCase`, `toLowerCase`, `toLocale*`。文字列はencodedまたは表示の表現なのでadapterで生成する。補間なしのテンプレートリテラルと文字列リテラル(定数、`_tag`)は許可。型情報なしでは両辺が変数の`+`は区別できず検出しない
 

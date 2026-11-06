@@ -14,7 +14,7 @@ const time = (hour: number, minute: number) =>
 const period = (input: Period.PeriodInput) =>
   Option.getOrThrow(Period.make(input));
 
-const decode = <A>(schema: Schema.Schema<A, string>, s: string) =>
+const decode = <A>(schema: Schema.Codec<A, string>, s: string) =>
   Option.map(Schema.decodeUnknownOption(schema)(s), (a) =>
     Schema.encodeSync(schema)(a),
   );
@@ -199,7 +199,7 @@ describe("PlainTime", () => {
 describe("PlainDateTime", () => {
   it("converts to and from an effect zoned DateTime", () => {
     const local = PlainDateTime.make(date(2026, 11, 2), time(9, 0));
-    const tokyo = DateTime.zoneUnsafeMakeNamed("Asia/Tokyo");
+    const tokyo = DateTime.zoneMakeNamedUnsafe("Asia/Tokyo");
     const zoned = Option.getOrThrow(PlainDateTime.toZoned(local, tokyo));
     expect({
       utc: DateTime.formatIso(zoned),

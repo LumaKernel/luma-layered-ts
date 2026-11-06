@@ -18,6 +18,4 @@ export type ReadonlyJsonArray = readonly ReadonlyJsonValue[];
 
 /** Any JSON-representable value (deep readonly). Inner layerでJSON構造を参照する必要がある場合用。 */
 export type ReadonlyJsonValue =
-  | JsonPrimitive
-  | ReadonlyJsonObject
-  | ReadonlyJsonArray;
+  JsonPrimitive | ReadonlyJsonObject | ReadonlyJsonArray;

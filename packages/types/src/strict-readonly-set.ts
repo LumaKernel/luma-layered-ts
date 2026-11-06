@@ -22,8 +22,7 @@ export function toStrictReadonlySet<T>(
     has: (value) => set.has(value),
     keys: () => set.keys(),
     values: () => set.values(),
-    entries: () =>
-      set.entries() as IterableIterator<readonly [T, T]>,
+    entries: () => set.entries() as IterableIterator<readonly [T, T]>,
     forEach: (cb) => set.forEach(cb),
     [Symbol.iterator]: () => set.values(),
   };

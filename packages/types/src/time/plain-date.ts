@@ -1,24 +1,25 @@
 import { Option, Order as Ord, Schema } from "effect";
 import { Temporal } from "temporal-polyfill";
-import { attempt, isoStringSchema, sign } from "./internal.js";
+import { attempt, intBetween, isoStringSchema, sign } from "./internal.js";
 import * as Period from "./period.js";
 
 const fields = Schema.Struct({
   year: Schema.Int,
-  month: Schema.Int.pipe(Schema.between(1, 12)),
-  day: Schema.Int.pipe(Schema.between(1, 31)),
+  month: intBetween(1, 12),
+  day: intBetween(1, 31),
 });
 
 /** Calendar date without time or time zone (ISO 8601 calendar). */
 export class PlainDate extends Schema.TaggedClass<PlainDate>()(
   "PlainDate",
   fields.pipe(
-    Schema.filter(
-      (f) =>
-        Option.isSome(
-          attempt(() => Temporal.PlainDate.from(f, { overflow: "reject" })),
-        ),
-      { message: () => "Not an existing calendar date" },
+    Schema.check(
+      Schema.makeFilter(
+        (f) =>
+          Option.isSome(
+            attempt(() => Temporal.PlainDate.from(f, { overflow: "reject" })),
+          ) || "Not an existing calendar date",
+      ),
     ),
   ),
 ) {}
@@ -61,7 +62,7 @@ export const dayOfWeek = (self: PlainDate): number =>
   toTemporal(self).dayOfWeek;
 
 /** `YYYY-MM-DD` */
-export const FromString: Schema.Schema<PlainDate, string> = isoStringSchema(
+export const FromString: Schema.Codec<PlainDate, string> = isoStringSchema(
   PlainDate,
   "an ISO 8601 date (YYYY-MM-DD)",
   /^\d{4}-\d{2}-\d{2}$/,
