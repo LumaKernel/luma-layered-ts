@@ -1,13 +1,13 @@
 import { Duration, Option, Order as Ord, Schema } from "effect";
 import { Temporal } from "temporal-polyfill";
-import { attempt, isoStringSchema, sign } from "./internal.js";
+import { attempt, intBetween, isoStringSchema, sign } from "./internal.js";
 
 /** Wall-clock time without date or time zone, in milliseconds precision (same as effect DateTime). */
 export class PlainTime extends Schema.TaggedClass<PlainTime>()("PlainTime", {
-  hour: Schema.Int.pipe(Schema.between(0, 23)),
-  minute: Schema.Int.pipe(Schema.between(0, 59)),
-  second: Schema.Int.pipe(Schema.between(0, 59)),
-  millisecond: Schema.Int.pipe(Schema.between(0, 999)),
+  hour: intBetween(0, 23),
+  minute: intBetween(0, 59),
+  second: intBetween(0, 59),
+  millisecond: intBetween(0, 999),
 }) {}
 
 export type PlainTimeInput = Pick<PlainTime, "hour" | "minute"> &
@@ -56,7 +56,7 @@ export const Order: Ord.Order<PlainTime> = Ord.make((a, b) =>
 /** Adds an exact duration, wrapping around midnight. None for an infinite duration. */
 export const addDuration = (
   self: PlainTime,
-  duration: Duration.DurationInput,
+  duration: Duration.Input,
 ): Option.Option<PlainTime> =>
   attempt(() =>
     fromTemporal(
@@ -65,7 +65,7 @@ export const addDuration = (
   );
 
 /** `HH:MM`, `HH:MM:SS` or `HH:MM:SS.sss` */
-export const FromString: Schema.Schema<PlainTime, string> = isoStringSchema(
+export const FromString: Schema.Codec<PlainTime, string> = isoStringSchema(
   PlainTime,
   "an ISO 8601 time (HH:MM[:SS[.sss]])",
   /^\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?$/,

@@ -1,6 +1,6 @@
 # luma-layered-ts
 
-TypeScriptレイヤードアーキテクチャ。Effect.tsベース。
+TypeScriptレイヤードアーキテクチャ。Effect.ts (effect 4) ベース。
 
 ## 導入
 

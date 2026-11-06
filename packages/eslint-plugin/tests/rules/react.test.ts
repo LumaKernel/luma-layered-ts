@@ -415,12 +415,12 @@ ruleTester.run("react", rule, {
 
     // --- Schema boundary ---
     {
-      code: `Schema.decodeUnknown(S)(d);`,
+      code: `Schema.decodeUnknownEffect(S)(d);`,
       filename: "/project/src/ui/hooks/use-user.ts",
       errors: [
         {
           messageId: "schemaBoundary",
-          data: { method: "decodeUnknown", layer: "ui/hooks" },
+          data: { method: "decodeUnknownEffect", layer: "ui/hooks" },
         },
       ],
     },

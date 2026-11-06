@@ -22,14 +22,12 @@ export function toStrictReadonlyMap<K, V>(
     get size() {
       return map.size;
     },
-    get: (key) => Option.fromNullable(map.get(key)),
+    get: (key) => Option.fromUndefinedOr(map.get(key)),
     has: (key) => map.has(key),
     keys: () => map.keys(),
     values: () => map.values(),
-    entries: () =>
-      map.entries() as IterableIterator<readonly [K, V]>,
+    entries: () => map.entries() as IterableIterator<readonly [K, V]>,
     forEach: (cb) => map.forEach(cb),
-    [Symbol.iterator]: () =>
-      map.entries() as IterableIterator<readonly [K, V]>,
+    [Symbol.iterator]: () => map.entries() as IterableIterator<readonly [K, V]>,
   };
 }

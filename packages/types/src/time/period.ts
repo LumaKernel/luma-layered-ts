@@ -14,11 +14,13 @@ export class Period extends Schema.TaggedClass<Period>()(
     weeks: Schema.Int,
     days: Schema.Int,
   }).pipe(
-    Schema.filter(
-      ({ years, months, weeks, days }) =>
-        [years, months, weeks, days].every((n) => n >= 0) ||
-        [years, months, weeks, days].every((n) => n <= 0),
-      { message: () => "Period fields must not mix signs" },
+    Schema.check(
+      Schema.makeFilter(
+        ({ years, months, weeks, days }) =>
+          [years, months, weeks, days].every((n) => n >= 0) ||
+          [years, months, weeks, days].every((n) => n <= 0) ||
+          "Period fields must not mix signs",
+      ),
     ),
   ),
 ) {}
@@ -75,7 +77,7 @@ export const fromTemporal = (d: Temporal.Duration): Period =>
   });
 
 /** ISO 8601 date-based duration: `P1Y2M`, `P3W`, `-P10D`. Time components are rejected. */
-export const FromString: Schema.Schema<Period, string> = isoStringSchema(
+export const FromString: Schema.Codec<Period, string> = isoStringSchema(
   Period,
   "an ISO 8601 period (PnYnMnWnD)",
   /^-?P(?=\d)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?$/,

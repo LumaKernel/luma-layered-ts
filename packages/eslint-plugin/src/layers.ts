@@ -155,19 +155,24 @@ export const IO_GLOBALS = new Set([
   "performance",
 ]);
 
-// Schema boundary methods (decode/encode = canonical ↔ encoded conversion)
-export const SCHEMA_BOUNDARY_METHODS = new Set([
-  "decode",
-  "decodeSync",
-  "decodeUnknown",
-  "decodeUnknownSync",
-  "decodePromise",
-  "encode",
-  "encodeSync",
-  "encodeUnknown",
-  "encodeUnknownSync",
-  "encodePromise",
-]);
+// Schema boundary methods (decode/encode = canonical ↔ encoded conversion), effect 4 `Schema` / `SchemaParser`.
+// Schema.decode/encode/decodeTo/encodeTo are schema definitions (not a boundary crossing) and stay allowed.
+// When effect adds a runner variant, add it to SCHEMA_RUNNER_SUFFIXES.
+const SCHEMA_RUNNER_SUFFIXES = [
+  "Effect",
+  "Exit",
+  "Option",
+  "Result",
+  "Promise",
+  "Sync",
+] as const;
+export const SCHEMA_BOUNDARY_METHODS: ReadonlySet<string> = new Set(
+  ["decode", "encode"].flatMap((direction) =>
+    ["", "Unknown"].flatMap((unknown) =>
+      SCHEMA_RUNNER_SUFFIXES.map((suffix) => `${direction}${unknown}${suffix}`),
+    ),
+  ),
+);
 
 // String interpretation methods (structural access, pattern matching, content inspection).
 // Excludes includes/indexOf/lastIndexOf/slice — these exist on Array too and cause

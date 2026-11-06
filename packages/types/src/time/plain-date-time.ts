@@ -1,6 +1,6 @@
 import { DateTime, Duration, Option, Order as Ord, Schema } from "effect";
 import { Temporal } from "temporal-polyfill";
-import { attempt, isoStringSchema, sign } from "./internal.js";
+import { attempt, intBetween, isoStringSchema, sign } from "./internal.js";
 import * as Period from "./period.js";
 import * as PlainDate from "./plain-date.js";
 import * as PlainTime from "./plain-time.js";
@@ -44,7 +44,7 @@ export const addPeriod = (
 /** Adds an exact duration as wall-clock arithmetic (no time zone, so no DST). None for an infinite duration. */
 export const addDuration = (
   self: PlainDateTime,
-  duration: Duration.DurationInput,
+  duration: Duration.Input,
 ): Option.Option<PlainDateTime> =>
   attempt(() =>
     fromTemporal(
@@ -66,10 +66,10 @@ export const toZoned = (
       year: self.date.year,
       month: self.date.month,
       day: self.date.day,
-      hours: self.time.hour,
-      minutes: self.time.minute,
-      seconds: self.time.second,
-      millis: self.time.millisecond,
+      hour: self.time.hour,
+      minute: self.time.minute,
+      second: self.time.second,
+      millisecond: self.time.millisecond,
     },
     { timeZone, adjustForTimeZone: true, disambiguation },
   );
@@ -84,16 +84,16 @@ export const fromZoned = (zoned: DateTime.Zoned): PlainDateTime => {
       day: parts.day,
     }),
     new PlainTime.PlainTime({
-      hour: parts.hours,
-      minute: parts.minutes,
-      second: parts.seconds,
-      millisecond: parts.millis,
+      hour: parts.hour,
+      minute: parts.minute,
+      second: parts.second,
+      millisecond: parts.millisecond,
     }),
   );
 };
 
 /** `YYYY-MM-DDTHH:MM[:SS[.sss]]` */
-export const FromString: Schema.Schema<PlainDateTime, string> = isoStringSchema(
+export const FromString: Schema.Codec<PlainDateTime, string> = isoStringSchema(
   PlainDateTime,
   "an ISO 8601 date-time without offset (YYYY-MM-DDTHH:MM[:SS[.sss]])",
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?$/,

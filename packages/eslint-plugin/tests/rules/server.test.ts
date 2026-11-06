@@ -154,13 +154,18 @@ ruleTester.run("server", rule, {
       filename: "/project/src/infra/clock.ts",
     },
     {
-      code: `Schema.decodeUnknown(S)(d);`,
+      code: `Schema.decodeUnknownEffect(S)(d);`,
       filename: "/project/src/adapter/api.ts",
     },
     { code: `atob(encoded);`, filename: "/project/src/adapter/decode.ts" },
     { code: `encodeURIComponent(s);`, filename: "/project/src/infra/url.ts" },
 
     // --- core/service: allowed operations ---
+    // effect 4 schema definitions (not boundary crossings)
+    {
+      code: `const S = Schema.String.pipe(Schema.decodeTo(Schema.Number, t), Schema.encode(g), Schema.decode(g));`,
+      filename: "/project/src/core/foo.ts",
+    },
     // String literals as constants and tags, template literals without interpolation
     {
       code: `const tag = "Black"; const t = \`fixed\`; type K = \`k_\${string}\`;`,
@@ -678,22 +683,22 @@ ruleTester.run("server", rule, {
 
     // --- Schema boundary in inner layers ---
     {
-      code: `Schema.decodeUnknown(S)(d);`,
+      code: `Schema.decodeUnknownEffect(S)(d);`,
       filename: "/project/src/core/foo.ts",
       errors: [
         {
           messageId: "schemaBoundary",
-          data: { method: "decodeUnknown", layer: "core" },
+          data: { method: "decodeUnknownEffect", layer: "core" },
         },
       ],
     },
     {
-      code: `Schema.encode(S)(d);`,
+      code: `Schema.encodeResult(S)(d);`,
       filename: "/project/src/service/foo.ts",
       errors: [
         {
           messageId: "schemaBoundary",
-          data: { method: "encode", layer: "service" },
+          data: { method: "encodeResult", layer: "service" },
         },
       ],
     },
@@ -704,6 +709,17 @@ ruleTester.run("server", rule, {
         {
           messageId: "schemaBoundary",
           data: { method: "decodeSync", layer: "core" },
+        },
+      ],
+    },
+
+    {
+      code: `SchemaParser.decodeUnknownOption(S)(d);`,
+      filename: "/project/src/service/foo.ts",
+      errors: [
+        {
+          messageId: "schemaBoundary",
+          data: { method: "decodeUnknownOption", layer: "service" },
         },
       ],
     },
