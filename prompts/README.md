@@ -8,3 +8,7 @@ JSONはencoded boundary representation。canonical representationはEffect.tsの
 2. `src/<layer>/`ごとの`CLAUDE.md`(init手順で生成)
 3. `@luma-layered-ts/eslint-plugin`
 4. `@luma-layered-ts/types`
+
+## 付録
+
+- `web-best-practices.md` - レイヤ仕様と独立したWebフロントエンドの方針一覧。採否は導入時に決める
