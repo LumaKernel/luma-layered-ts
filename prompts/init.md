@@ -22,3 +22,4 @@
    - ページ合成 → ui/pages
 7. 既存の検査抑制ディレクティブ(eslint-disable, @ts-ignore, coverage ignore等)とReact effect hookは、まずそれなしで書けないか検討し、残るものは該当コードを最小限に切り出して同じレイヤの`_unsafe_/`へ移す
 8. ESLint実行で全エラーを解消。レイヤ移動によりimport/encoding制約が自動適用される
+9. web-best-practices.md(付録)の扱いを利用者に問う: 適用しない / 参照のみ(CLAUDE.mdから参照) / 適用(節単位で採否を選ばせる)。適用する節は、規則をCLAUDE.mdに強制テストのパス付きで転記し、規約テストを用意して既存コードの違反を解消する。プロジェクトに該当しない節(Next.js等)は問わずに外す
