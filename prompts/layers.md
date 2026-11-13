@@ -27,9 +27,11 @@ React effect hook(`useEffect`, `useLayoutEffect`, `useInsertionEffect`)の使用
 | ディレクトリ | import可 | 特徴 |
 |---|---|---|
 | `src/app/api/**` | core, service, adapter, infra | サーバー側wiring root。実処理はadapter/infra/serviceに委譲。 |
-| `src/app/**`(api以外) | core, service, adapter, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。 |
+| `src/app/**`(api以外) | core, service, adapter, infra, ui/* | UI側wiring root。実UIはui/pagesに委譲。ui/pages相当の制約。server componentはinfraからデータを読む。 |
 
 Next.jsが`src/`直下に要求する規約ファイルもwiring root。`proxy`, `middleware`, `instrumentation`はapp/api、`instrumentation-client`, `mdx-components`はapp/pagesと同じ制約。
+
+server componentでのデータ読み取り: page/layoutがinfraの関数を直接awaitし、Suspenseで流す。route handlerと同じ値を返すならinfra(またはservice)の同じ関数を共有する。app/pagesのファイルは`"use client"`の先からimportされるとclientのmodule graphに入るが、ファイル単位のESLintでは推移的な経路を判定できない。そのためinfraの各ファイルは先頭に`import "server-only";`を置き、clientに入った時点でbuildを失敗させる(`recommended-next`が強制)。
 
 app/配下は薄いエントリーポイント。ロジックやUI実装を直接書かない。
 
@@ -60,5 +62,5 @@ ui/components  o     -    -     -      o      o     -     -
 ui/containers  o     o    -     -      o      o     o     -
 ui/pages       o     o    -     -      o      o     o     o
 app/api        o     o    o     o      -      -     -     -
-app/pages      o     o    o     -      o      o     o     o
+app/pages      o     o    o     o      o      o     o     o
 ```

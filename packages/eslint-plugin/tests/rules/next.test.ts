@@ -18,6 +18,20 @@ ruleTester.run("next", rule, {
       code: `import { decodeParams } from "../adapter/params";`,
       filename: "/project/src/app/page.tsx",
     },
+    // app/pages server components read data through infra. Leaking into the client graph is
+    // stopped by the build (server-only in infra), not per file — even from client-only files.
+    {
+      code: `import { findUser } from "@/infra/user-repo";`,
+      filename: "/project/src/app/page.tsx",
+    },
+    {
+      code: `"use client";\nimport { kv } from "@/infra/kv";`,
+      filename: "/project/src/app/client-part.tsx",
+    },
+    {
+      code: `import { kv } from "@/infra/kv";`,
+      filename: "/project/src/instrumentation-client.ts",
+    },
     // --- app/api: import matrix (can import core, service, adapter, infra) ---
     {
       code: `import { Foo } from "../../core/foo";`,
@@ -151,16 +165,6 @@ ruleTester.run("next", rule, {
       filename: "/project/src/middleware.ts",
       errors: [{ messageId: "importNonLayer" }],
     },
-    {
-      code: `import { kv } from "@/infra/kv";`,
-      filename: "/project/src/instrumentation-client.ts",
-      errors: [
-        {
-          messageId: "importViolation",
-          data: { fromLayer: "app/pages", toLayer: "infra" },
-        },
-      ],
-    },
 
     // --- app/api: import violations ---
     {
@@ -190,18 +194,6 @@ ruleTester.run("next", rule, {
         {
           messageId: "importViolation",
           data: { fromLayer: "app/api", toLayer: "ui/pages" },
-        },
-      ],
-    },
-
-    // --- app/pages: import violations ---
-    {
-      code: `import { Foo } from "../infra/bar";`,
-      filename: "/project/src/app/page.tsx",
-      errors: [
-        {
-          messageId: "importViolation",
-          data: { fromLayer: "app/pages", toLayer: "infra" },
         },
       ],
     },

@@ -19,6 +19,17 @@ export default tseslint.config(
 );
 ```
 
+infraが`import "server-only";`を要求されるので`server-only`をdependenciesに入れる。vitestはreact-server条件で動かずimport時に例外になるため、空モジュールへaliasする(`server-only`のexportsは`empty.js`を公開しないので絶対パスで指す):
+
+```ts
+// vitest.config.ts
+resolve: {
+  alias: {
+    "server-only": path.resolve(__dirname, "node_modules/server-only/empty.js"),
+  },
+},
+```
+
 ## 非Next.jsプロジェクト
 
 ```js

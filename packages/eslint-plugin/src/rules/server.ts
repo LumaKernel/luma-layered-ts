@@ -26,6 +26,8 @@ import type { LayerName } from "../layers.js";
 
 type Options = {
   readonly adapterAllowedPackages?: readonly string[];
+  // Next.js only: `server-only` throws on import outside the react-server condition (plain Node, vitest).
+  readonly requireServerOnly?: boolean;
 };
 const defaultOptions: Options = {};
 
@@ -49,7 +51,8 @@ type MessageId =
   | "adapterImpure"
   | "adapterNodeBuiltin"
   | "adapterPackageNotAllowed"
-  | "adapterAmbientLocale";
+  | "adapterAmbientLocale"
+  | "requireServerOnly";
 
 export default createRule<[Options], MessageId>({
   name: "server",
@@ -82,12 +85,15 @@ export default createRule<[Options], MessageId>({
         "'{{name}}' is not in the adapter package allowlist. adapter is a pure codec shared by server and client; add the package to the server rule option adapterAllowedPackages only if it does no IO.",
       adapterAmbientLocale:
         "'{{name}}' depends on the runtime's locale or time zone, which differ between server and client. {{fix}}",
+      requireServerOnly:
+        'infra must start with `import "server-only";`. app/pages server components import infra, and this makes the build fail when infra reaches the client graph.',
     },
     schema: [
       {
         type: "object",
         properties: {
           adapterAllowedPackages: { type: "array", items: { type: "string" } },
+          requireServerOnly: { type: "boolean" },
         },
         additionalProperties: false,
       },
@@ -208,6 +214,28 @@ export default createRule<[Options], MessageId>({
     }
 
     return {
+      // --- server-only (infra, opt-in) ---
+      ...(layer === "infra" && options.requireServerOnly === true
+        ? {
+            Program(node: TSESTree.Program): void {
+              const hasServerOnly = node.body.some(
+                (s) =>
+                  s.type === AST_NODE_TYPES.ImportDeclaration &&
+                  s.source.value === "server-only" &&
+                  s.specifiers.length === 0 &&
+                  s.importKind === "value",
+              );
+              if (!hasServerOnly) {
+                context.report({
+                  node,
+                  loc: { line: 1, column: 0 },
+                  messageId: "requireServerOnly",
+                });
+              }
+            },
+          }
+        : {}),
+
       // --- Import checks (all server layers) ---
       "Identifier[name='Date']"(node: TSESTree.Identifier): void {
         if (isDateReference(node))

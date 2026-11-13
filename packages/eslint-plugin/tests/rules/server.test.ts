@@ -211,8 +211,49 @@ ruleTester.run("server", rule, {
       code: `JSON.parse(data);`,
       filename: "/project/src/ui/hooks/use-data.ts",
     },
+
+    // --- requireServerOnly ---
+    {
+      code: `import "server-only";\nimport { Pool } from "pg";`,
+      filename: "/project/src/infra/db.ts",
+      options: [{ requireServerOnly: true }],
+    },
+    {
+      code: `import "server-only";`,
+      filename: "/project/src/infra/_unsafe_/db.ts",
+      options: [{ requireServerOnly: true }],
+    },
+    // off by default (server-only throws outside Next.js)
+    {
+      code: `export const pool = 1;`,
+      filename: "/project/src/infra/db.ts",
+    },
+    // only infra
+    ...["core", "service", "adapter"].map((layer) => ({
+      code: `export const x = 1;`,
+      filename: `/project/src/${layer}/foo.ts`,
+      options: [{ requireServerOnly: true }],
+    })),
+    {
+      code: `export const x = 1;`,
+      filename: "/project/src/infra/db.test.ts",
+      options: [{ requireServerOnly: true }],
+    },
   ],
   invalid: [
+    // --- requireServerOnly ---
+    ...[
+      `import { Pool } from "pg";`,
+      `import type {} from "server-only";`,
+      `import x from "server-only";`,
+      `export {};\nasync function f() { await import("server-only"); }`,
+    ].map((code) => ({
+      code,
+      filename: "/project/src/infra/db.ts",
+      options: [{ requireServerOnly: true }] as const,
+      errors: [{ messageId: "requireServerOnly" as const, line: 1 }],
+    })),
+
     // --- core/service: string construction ---
     ...(
       [

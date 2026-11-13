@@ -49,7 +49,8 @@ export const configs = {
     },
     linterOptions: baseLinterOptions,
     rules: {
-      "@luma-layered-ts/server": "error",
+      // app/pages may import infra (server components); server-only keeps infra out of the client graph
+      "@luma-layered-ts/server": ["error", { requireServerOnly: true }],
       "@luma-layered-ts/react": "error",
       "@luma-layered-ts/next": "error",
       "@luma-layered-ts/require-layer": "error",
