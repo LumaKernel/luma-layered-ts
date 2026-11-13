@@ -10,6 +10,7 @@
    - effect
    - @luma-layered-ts/types
    - @luma-layered-ts/eslint-plugin (devDependencies)
+   - server-only (Next.jsのみ。setup/eslint-config.md)
 4. eslint.config.ts を eslint-rules.md + setup/eslint-config.md から生成
 5. ルート CLAUDE.md に仕様ファイルの配置先への参照を追記
 6. 既存コードをレイヤディレクトリに移動する。`require-layer`ルールが`src/`配下でレイヤ外のファイルを検出する。移動先の判断基準:

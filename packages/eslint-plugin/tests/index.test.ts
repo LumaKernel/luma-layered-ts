@@ -42,6 +42,34 @@ describe("index exports", () => {
   });
 });
 
+describe("server-only in infra", () => {
+  const linter = new TSESLint.Linter({ cwd: "/project", configType: "flat" });
+  function lint(configName: "recommended" | "recommended-next") {
+    return linter
+      .verify(
+        `import { Pool } from "pg";\n`,
+        [
+          { files: ["**/*.ts"], languageOptions: { parser: tsParser } },
+          configs[configName],
+        ] satisfies TSESLint.FlatConfig.ConfigArray,
+        "/project/src/infra/db.ts",
+      )
+      .map((m) => `${m.line} ${m.ruleId ?? "-"}: ${m.messageId ?? "-"}`);
+  }
+
+  it("is required by recommended-next", () => {
+    expect(lint("recommended-next")).toMatchInlineSnapshot(`
+      [
+        "1 @luma-layered-ts/server: requireServerOnly",
+      ]
+    `);
+  });
+
+  it("is not required by recommended (server-only throws outside Next.js)", () => {
+    expect(lint("recommended")).toMatchInlineSnapshot(`[]`);
+  });
+});
+
 describe("unsafe-dir config", () => {
   const linter = new TSESLint.Linter({ cwd: "/project", configType: "flat" });
   const config = [

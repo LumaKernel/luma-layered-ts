@@ -60,7 +60,7 @@ adapterはサーバー(infra, app/api)とクライアント(ui/hooks, app/pages)
 
 検出できないもの: `Intl`の出力の環境差(Node.jsとブラウザでICUデータが異なる)。canonical-vs-encoded.mdの「実行環境に依存する出力」に従う。
 
-infraはインポート行列のみ。
+infraはインポート行列のみ。ただしオプション`requireServerOnly: true`で、各ファイル(`_unsafe_/`含む、テスト除く)の最上位に`import "server-only";`を要求する。`recommended-next`はこれを有効にする(app/pagesがinfraをimportできるため。layers.md参照)。`server-only`はreact-server条件の外(素のNode.js、vitest)ではimport時に例外を投げるので、`recommended`では無効。`recommended-next`で`server`ルールのオプションを上書きするときは`requireServerOnly: true`も書く。
 
 全レイヤ共通: `@/`エイリアスimportがレイヤディレクトリに解決されない場合は`importNonLayer`エラー。`@/engines/foo`や`@/lib/bar`のようなレイヤ外パスへのimportを検出する。
 
@@ -91,7 +91,7 @@ infraはインポート行列のみ。
 | サブレイヤ | パス | import可能 | 制約 |
 |---|---|---|---|
 | `app/api` | `src/app/api/**`, `src/{proxy,middleware,instrumentation}.*` | core, service, adapter, infra | インポート行列のみ(サーバー側wiring root) |
-| `app/pages` | `src/app/**`(api以外), `src/{instrumentation-client,mdx-components}.*` | core, service, adapter, ui/hooks, ui/components, ui/containers, ui/pages | adapterの関数でroute params等をdecodeする。自身はencoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
+| `app/pages` | `src/app/**`(api以外), `src/{instrumentation-client,mdx-components}.*` | core, service, adapter, infra, ui/hooks, ui/components, ui/containers, ui/pages | adapterの関数でroute params等をdecodeする。server componentはinfraからデータを読む。自身はencoding globals禁止、Schema boundary禁止、string解釈禁止(ui/pages相当) |
 
 `app/api`のroute handlerは薄いwiring rootとして、実処理はadapter/infra/serviceに委譲する。
 `app/pages`のpage/layoutは薄いwiring rootとして、実UIは`ui/pages`や`ui/components`に委譲する。

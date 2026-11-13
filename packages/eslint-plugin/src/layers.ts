@@ -29,10 +29,14 @@ const allowedImports: Record<LayerName, readonly LayerName[]> = {
   "ui/pages": ["core", "service", "ui/hooks", "ui/components", "ui/containers"],
   // app/ layers are wiring roots (entry points) — not importable by other layers
   "app/api": ["core", "service", "adapter", "infra"],
+  // Server components read data through infra. A file here can still end up in the client graph
+  // (behind "use client", directly or transitively), which a per-file lint cannot see; the build
+  // stops that via `import "server-only"` in infra (server rule option requireServerOnly, on in recommended-next).
   "app/pages": [
     "core",
     "service",
     "adapter",
+    "infra",
     "ui/hooks",
     "ui/components",
     "ui/containers",
